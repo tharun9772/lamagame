@@ -1,0 +1,591 @@
+<html><head><base href="." target="_blank">
+<title>The Code Game</title>
+<style>
+    body {
+        background-color: #1a1a1a;
+        color: #00ff00;
+        font-family: 'Courier New', monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .game-container {
+        display: flex;
+        gap: 20px;
+        width: 90%;
+        max-width: 1000px;
+    }
+
+    .code-list {
+        background-color: #000000;
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid #00ff00;
+        width: 200px;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .code-list h2 {
+        margin-top: 0;
+        font-size: 1.2em;
+    }
+
+    .code-list ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .code-list li {
+        padding: 5px 0;
+        border-bottom: 1px solid #00ff00;
+    }
+
+    .terminal {
+        background-color: #000000;
+        padding: 20px;
+        border-radius: 10px;
+        border: 2px solid #00ff00;
+        flex-grow: 1;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+
+    .display {
+        background-color: #000000;
+        border: 1px solid #00ff00;
+        padding: 20px;
+        margin-bottom: 20px;
+        min-height: 200px;
+        overflow-y: auto;
+    }
+
+    input {
+        background-color: #000000;
+        border: 1px solid #00ff00;
+        color: #00ff00;
+        padding: 10px;
+        width: 100%;
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+    }
+
+    .effect {
+        position: fixed;
+        pointer-events: none;
+        z-index: 1000;
+    }
+
+    .rainbow {
+        animation: rainbow 2s linear infinite;
+    }
+
+    @keyframes rainbow {
+        0% { color: red; }
+        20% { color: yellow; }
+        40% { color: lime; }
+        60% { color: aqua; }
+        80% { color: violet; }
+        100% { color: red; }
+    }
+
+    .shake {
+        animation: shake 0.5s linear;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-10px); }
+        75% { transform: translateX(10px); }
+    }
+
+    .jumpscare {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        animation: jumpscare 3s forwards;
+    }
+
+    @keyframes jumpscare {
+        0% { opacity: 0; }
+        5% { opacity: 1; }
+        15% { transform: scale(1); }
+        20% { transform: scale(1.2); }
+        25% { transform: scale(1); }
+        90% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+
+    .scary-face {
+        font-size: 150px;
+        animation: scarySpin 0.3s infinite;
+    }
+
+    @keyframes scarySpin {
+        0% { transform: rotate(-10deg); }
+        50% { transform: rotate(10deg); }
+        100% { transform: rotate(-10deg); }
+    }
+
+    .video-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .bomb-game {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #333;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .house {
+        width: 200px;
+        height: 200px;
+        background: #855;
+        position: relative;
+        margin: 20px;
+        cursor: pointer;
+    }
+
+    .house:before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-left: 100px solid transparent;
+        border-right: 100px solid transparent;
+        border-bottom: 50px solid #733;
+    }
+
+    .bomb {
+        width: 30px;
+        height: 30px;
+        background: #000;
+        border-radius: 50%;
+        position: absolute;
+        cursor: grab;
+    }
+
+    .bomb:before {
+        content: '🧨';
+        position: absolute;
+        top: -5px;
+        left: 0;
+        font-size: 20px;
+    }
+
+    .timer {
+        font-size: 24px;
+        font-family: monospace;
+        margin: 20px;
+        color: #f00;
+    }
+
+    .bomb-btn {
+        background: #f00;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 10px;
+    }
+
+    .explosion-effect {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, #ff0 0%, #f00 50%, transparent 70%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .lamawithtophat-jumpscare {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        animation: jumpscare 3s forwards;
+    }
+
+    .lamawithtophat-image {
+        width: 300px;
+        height: 300px;
+        animation: scarySpin 0.3s infinite;
+    }
+</style>
+</head>
+<body>
+    <h1>The Code Game</h1>
+    <div class="game-container">
+        <div class="code-list">
+            <h2>Available Codes:</h2>
+            <ul>
+                <li>matrix</li>
+                <li>rainbow</li>
+                <li>shake</li>
+                <li>explosion</li>
+                <li>hack</li>
+                <li>scary</li>
+                <li>rickroll</li>
+                <li>lama</li>
+                <li>bomb</li>
+                <li>lamawithtophat</li>
+                <li>iamnotaminecraftdirtblock</li>
+                <li>lamagames</li>
+                <li>poop</li>
+            </ul>
+        </div>
+        <div class="terminal">
+            <div id="display" class="display">
+                Welcome to The Code Game!
+                Type a code and press Enter to see what happens!
+            </div>
+            <input type="text" id="codeInput" placeholder="Enter code here..." autofocus>
+        </div>
+    </div>
+
+<script>const display = document.getElementById('display');
+const input = document.getElementById('codeInput');
+const codes = {
+  'matrix': () => {
+    for (let i = 0; i < 50; i++) {
+      const span = document.createElement('div');
+      span.style.position = 'fixed';
+      span.style.left = Math.random() * window.innerWidth + 'px';
+      span.style.top = Math.random() * window.innerHeight + 'px';
+      span.style.color = '#00ff00';
+      span.style.fontSize = '20px';
+      span.classList.add('effect');
+      span.textContent = Math.random() > 0.5 ? '1' : '0';
+      document.body.appendChild(span);
+      setTimeout(() => span.remove(), 2000);
+    }
+    return "Initiating Matrix effect...";
+  },
+  'rainbow': () => {
+    display.classList.add('rainbow');
+    setTimeout(() => display.classList.remove('rainbow'), 5000);
+    return "🌈 Rainbow mode activated! 🌈";
+  },
+  'shake': () => {
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 500);
+    return "💫 Shake it off! 💫";
+  },
+  'explosion': () => {
+    const colors = ['#ff0000', '#ff7700', '#ffff00'];
+    for (let i = 0; i < 30; i++) {
+      const particle = document.createElement('div');
+      particle.style.position = 'fixed';
+      particle.style.left = '50%';
+      particle.style.top = '50%';
+      particle.style.width = '10px';
+      particle.style.height = '10px';
+      particle.style.borderRadius = '50%';
+      particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      particle.classList.add('effect');
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = 5 + Math.random() * 5;
+      const dx = Math.cos(angle) * velocity;
+      const dy = Math.sin(angle) * velocity;
+      let x = 0,
+        y = 0;
+      const animate = () => {
+        x += dx;
+        y += dy;
+        particle.style.transform = `translate(${x}px, ${y}px)`;
+        if (Math.abs(x) < window.innerWidth && Math.abs(y) < window.innerHeight) {
+          requestAnimationFrame(animate);
+        } else {
+          particle.remove();
+        }
+      };
+      document.body.appendChild(particle);
+      animate();
+    }
+    return "💥 BOOM! 💥";
+  },
+  'hack': () => {
+    const text = "HACKING THE MAINFRAME...\nACCESS GRANTED!\nDOWNLOADING DATA...";
+    let index = 0;
+    const interval = setInterval(() => {
+      display.textContent = text.substring(0, index);
+      index++;
+      if (index > text.length) clearInterval(interval);
+    }, 50);
+    return "";
+  },
+  'scary': () => {
+    const jumpscare = document.createElement('div');
+    jumpscare.classList.add('jumpscare');
+    const face = document.createElement('div');
+    face.classList.add('scary-face');
+    face.textContent = '👻';
+    jumpscare.appendChild(face);
+    document.body.appendChild(jumpscare);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    oscillator.start();
+    oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+    setTimeout(() => {
+      oscillator.stop();
+      jumpscare.remove();
+    }, 3000);
+    return "BOO! 👻";
+  },
+  'rickroll': () => {
+    const overlay = document.createElement('div');
+    overlay.classList.add('video-overlay');
+    const iframe = document.createElement('iframe');
+    iframe.width = "560";
+    iframe.height = "315";
+    iframe.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen = true;
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', () => {
+      overlay.remove();
+    });
+    return "Never gonna give you up! 🎵";
+  },
+  'lama': () => {
+    const jumpscare = document.createElement('div');
+    jumpscare.classList.add('jumpscare');
+    const face = document.createElement('div');
+    face.classList.add('scary-face');
+    face.textContent = '🦙';
+    jumpscare.appendChild(face);
+    document.body.appendChild(jumpscare);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    oscillator.start();
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+    setTimeout(() => {
+      oscillator.stop();
+      jumpscare.remove();
+    }, 3000);
+    return "LAMA ATTACK! 🦙";
+  },
+  'bomb': () => {
+    const bombGame = document.createElement('div');
+    bombGame.classList.add('bomb-game');
+    const house = document.createElement('div');
+    house.classList.add('house');
+    const bomb = document.createElement('div');
+    bomb.classList.add('bomb');
+    const timer = document.createElement('div');
+    timer.classList.add('timer');
+    timer.textContent = '30';
+    const startBtn = document.createElement('button');
+    startBtn.classList.add('bomb-btn');
+    startBtn.textContent = 'Start Timer';
+    const exitBtn = document.createElement('button');
+    exitBtn.classList.add('bomb-btn');
+    exitBtn.textContent = 'Exit Game';
+    bombGame.appendChild(house);
+    bombGame.appendChild(bomb);
+    bombGame.appendChild(timer);
+    bombGame.appendChild(startBtn);
+    bombGame.appendChild(exitBtn);
+    document.body.appendChild(bombGame);
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+    bomb.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    function dragStart(e) {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+      if (e.target === bomb) {
+        isDragging = true;
+      }
+    }
+    function drag(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+        bomb.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      }
+    }
+    function dragEnd() {
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
+    }
+    let countdownInterval;
+    startBtn.addEventListener('click', () => {
+      const houseRect = house.getBoundingClientRect();
+      const bombRect = bomb.getBoundingClientRect();
+      if (bombRect.left > houseRect.left && bombRect.right < houseRect.right && bombRect.top > houseRect.top && bombRect.bottom < houseRect.bottom) {
+        let timeLeft = 30;
+        countdownInterval = setInterval(() => {
+          timeLeft--;
+          timer.textContent = timeLeft;
+          if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            const explosion = document.createElement('div');
+            explosion.classList.add('explosion-effect');
+            house.appendChild(explosion);
+            explosion.style.opacity = '1';
+            setTimeout(() => {
+              bombGame.remove();
+            }, 2000);
+          }
+        }, 1000);
+      } else {
+        timer.textContent = 'Place the bomb on the house first!';
+      }
+    });
+    exitBtn.addEventListener('click', () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+      bombGame.remove();
+    });
+    return "Starting bomb planting mission...";
+  },
+  'lamawithtophat': () => {
+    const jumpscare = document.createElement('div');
+    jumpscare.classList.add('lamawithtophat-jumpscare');
+    const image = document.createElement('img');
+    image.src = 'lamawithtophat.png';
+    image.classList.add('lamawithtophat-image');
+    jumpscare.appendChild(image);
+    document.body.appendChild(jumpscare);
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    oscillator.start();
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+    setTimeout(() => {
+      oscillator.stop();
+      jumpscare.remove();
+    }, 3000);
+    return "FANCY LAMA ATTACK! 🎩";
+  },
+  'iamnotaminecraftdirtblock': () => {
+    const overlay = document.createElement('div');
+    overlay.classList.add('video-overlay');
+    const iframe = document.createElement('iframe');
+    iframe.width = "560";
+    iframe.height = "315";
+    iframe.src = "https://www.youtube.com/embed/zePTTd8nj1g?autoplay=1";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen = true;
+    overlay.appendChild(iframe);
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', () => {
+      overlay.remove();
+    });
+    return "I am totally not a Minecraft dirt block! 🌳";
+  },
+  'lamagames': () => {
+    window.open('https://sites.google.com/view/mylamagames/', '_blank');
+    return "Opening LamaGames in new tab...";
+  },
+  'poop': () => {
+    const emoji = '💩';
+    const poops = [];
+    for (let i = 0; i < 20; i++) {
+      const poop = document.createElement('div');
+      poop.style.position = 'fixed';
+      poop.style.left = Math.random() * window.innerWidth + 'px';
+      poop.style.top = -50 + 'px';
+      poop.style.fontSize = '30px';
+      poop.textContent = emoji;
+      poop.classList.add('effect');
+      document.body.appendChild(poop);
+      poops.push(poop);
+      let speed = 2 + Math.random() * 3;
+      let posY = -50;
+      const fall = () => {
+        posY += speed;
+        poop.style.top = posY + 'px';
+        if (posY < window.innerHeight) {
+          requestAnimationFrame(fall);
+        } else {
+          poop.remove();
+        }
+      };
+      fall();
+    }
+    return "💩 Raining poop! 💩";
+  }
+};
+input.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    const code = input.value.toLowerCase().trim();
+    input.value = '';
+    if (codes[code]) {
+      const message = codes[code]();
+      if (message) {
+        display.textContent = message;
+      }
+    } else {
+      display.textContent = "Invalid code. Try again!";
+    }
+  }
+});</script>
+</body></html>

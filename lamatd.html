@@ -1,0 +1,3135 @@
+<html><head><base href="https://"><title>Lama TD</title>
+<style>
+    body { margin: 0; overflow: hidden; }
+    #gameCanvas { 
+        background: #65A765;
+        width: 100vw;
+        height: 100vh;
+    }
+    #towerSelection {
+        position: fixed; 
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 100px;
+        background: rgba(0,0,0,0.7);
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+    }
+    .tower-select-btn {
+        padding: 10px;
+        min-height: 60px;
+        width: 100%;
+        white-space: normal;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .tower-select-btn:hover {
+        background: #45a049;
+    }
+    .tower-select-btn[data-tower="semipro"] {
+        background: #8B4513; /* Brown color for the Semi-Pro tower button */
+    }
+
+    .tower-select-btn[data-tower="semipro"]:hover {
+        background: #654321;
+    }
+    .tower-select-btn[data-tower="pro"] {
+        background: #2196F3; /* Blue color for the Pro tower button */
+    }
+
+    .tower-select-btn[data-tower="pro"]:hover {
+        background: #1976D2;
+    }
+    .tower-select-btn[data-tower="moneymaker"] {
+        background: #FFD700; /* Gold color for money maker tower */
+    }
+
+    .tower-select-btn[data-tower="moneymaker"]:hover {
+        background: #DAA520;
+    }
+    .tower-select-btn[data-tower="poison"] {
+        background: #4B0082; /* Dark purple color for poison tower */
+    }
+
+    .tower-select-btn[data-tower="poison"]:hover {
+        background: #301934;
+    }
+    .tower-select-btn[data-tower="bomb"] {
+        background: #FF4500; /* Orange-red color for bomb tower */
+    }
+
+    .tower-select-btn[data-tower="bomb"]:hover {
+        background: #CC3700;
+    }
+    .tower-select-btn[data-tower="ice"] {
+        background: #00CED1; /* Turquoise color for ice tower */
+    }
+
+    .tower-select-btn[data-tower="ice"]:hover {
+        background: #008B8B;
+    }
+    .tower-select-btn[data-tower="support"] {
+        background: #9370DB; /* Medium purple color for support tower */
+    }
+
+    .tower-select-btn[data-tower="support"]:hover {
+        background: #7B68EE;
+    }
+    #countdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 48px;
+        color: #333;
+        font-family: Arial, sans-serif;
+    }
+    #tabMenu {
+        margin-bottom: 10px;
+    }
+
+    .tab-btn {
+        padding: 8px 16px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px 5px 0 0;
+        margin-right: 2px;
+    }
+
+    .tab-btn.active {
+        background: #45a049;
+    }
+
+    .tab-content {
+        display: none;
+        position: fixed;
+        top: 60px;
+        right: 20px;
+        background: rgba(255,255,255,0.9);
+        padding: 15px;
+        border-radius: 5px;
+        transition: opacity 0.5s;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+    .modifier-btn {
+        display: block;
+        margin: 5px 0;
+        padding: 5px 10px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    .modifier-btn:hover {
+        background: #45a049;
+    }
+    #lives, #wave, #money, #maxWaves {
+        position: fixed;
+        left: 20px;
+        font-size: 24px;
+        color: #333;
+        font-family: Arial, sans-serif;
+    }
+    #lives { top: 20px; }
+    #wave { top: 60px; }
+    #money { top: 100px; }
+    #maxWaves { top: 140px; }
+    #gameOver {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 72px;
+        color: red;
+        font-family: Arial, sans-serif;
+        display: none;
+    }
+    #upgradeMenu {
+        position: fixed;
+        display: none;
+        background: rgba(255,255,255,0.9);
+        padding: 15px;
+        border-radius: 5px;
+        min-width: 200px;
+        z-index: 1000;
+    }
+    .upgrade-btn {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+        padding: 5px 10px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    .upgrade-btn:hover {
+        background: #45a049;
+    }
+    .upgrade-btn:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+    }
+    #towerStats, #nextLevelStats {
+        margin: 10px 0;
+        font-size: 14px;
+        color: #333;
+    }
+    #towerStats p, #nextLevelStats p {
+        margin: 2px 0;
+    }
+    #retryButton {
+        position: fixed;
+        top: 60%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 15px 30px;
+        font-size: 24px;
+        background-color: #ff6b6b;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none;
+    }
+
+    #retryButton:hover {
+        background-color: #ff5252;
+    }
+    #victoryScreen {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    #victoryScreen h1 {
+        color: gold;
+        font-size: 72px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    #victoryScreen h2 {
+        color: #4CAF50;
+        font-size: 36px;
+    }
+    .path-btn {
+        padding: 5px 10px;
+        margin: 0 5px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+
+    .path-btn.selected {
+        background: #45a049;
+    }
+
+    .path-btn.disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+    }
+    #mainMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    #mainMenu h1 {
+        color: #4CAF50;
+        font-size: 48px;
+        margin-bottom: 30px;
+        font-family: Arial, sans-serif;
+    }
+
+    .menu-btn {
+        padding: 15px 30px;
+        font-size: 24px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+        margin: 10px;
+        min-width: 200px;
+    }
+
+    .menu-btn:hover {
+        background: #45a049;
+    }
+    #difficultySelect {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .menu-btn.selected {
+        background: #45a049;
+        border: 2px solid #fff;
+    }
+    #easyBtn {
+        background: #4CAF50 !important;
+    }
+    #easyBtn:hover {
+        background: #45a049 !important;
+    }
+
+    #normalBtn {
+        background: #FFD700 !important;
+    }
+    #normalBtn:hover {
+        background: #DAA520 !important;
+    }
+
+    #hardBtn {
+        background: #ff6b6b !important;
+    }
+    #hardBtn:hover {
+        background: #ff5252 !important;
+    }
+    #extremeBtn {
+        background: #2D0A31 !important; 
+        color: #8B0000 !important; 
+    }
+
+    #extremeBtn:hover {
+        background: #1A0A1F !important; 
+    }
+    #unselectButton:hover {
+        background: #cc0000;
+    }
+    #freeplayPrompt {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255,255,255,0.9);
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+    #creditsBtn {
+        background: #4CAF50 !important;
+    }
+
+    #creditsBtn:hover {
+        background: #45a049 !important;
+    }
+
+    #creditsScreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1001;
+        font-family: Arial, sans-serif;
+    }
+
+    #creditsScreen h2 {
+        color: #4CAF50;
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+
+    #creditsScreen p {
+        font-size: 18px;
+        margin: 5px 0;
+        text-align: center;
+    }
+
+    #creditsScreen .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    #creditsScreen .close-btn:hover {
+        background: #45a049;
+    }
+    #mapSelection {
+        display: none;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    #mapSelection h2 {
+        color: #4CAF50;
+        margin-bottom: 15px;
+    }
+
+    .map-preview {
+        width: 150px;
+        height: 100px;
+        margin-bottom: 10px;
+        border: 2px solid #fff;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    #grasslandBtn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #4CAF50;
+    }
+
+    #grasslandBtn:hover {
+        background: #45a049;
+    }
+    .path-name {
+      font-size: 12px;
+      color: #666;
+      margin: 0 0 2px 0;
+    }
+    #circleButton {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 80px; 
+      height: 80px; 
+      border-radius: 50%;
+      background: #4CAF50;
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+      outline: none; 
+    }
+
+    #circleButton:hover {
+      transform: scale(1.1);
+      background: #45a049;
+    }
+    #circleButton img {
+      width: 60px;
+      height: 60px;
+    }
+</style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="mainMenu">
+        <h1>Lama TD</h1>
+        <button class="menu-btn" id="playBtn">Play</button>
+        <div id="mapSelection" style="display: none;">
+            <h2>Select Map</h2>
+            <button class="menu-btn" id="grasslandBtn">
+                <div class="map-preview">
+                    <svg width="150" height="100" viewBox="0 0 150 100">
+                        <rect width="150" height="100" fill="#65A765"/>
+                        <path d="M0 50 L150 50" stroke="#b0b0b0" stroke-width="10"/>
+                        <circle cx="75" cy="50" r="5" fill="#2D5A27"/>
+                    </svg>
+                </div>
+                Green Grassland
+            </button>
+            <button class="menu-btn" id="confirmMapBtn">Start Game</button>
+        </div>
+        <div id="difficultySelect" style="display: none;">
+            <button class="menu-btn" id="easyBtn">Easy Mode</button>
+            <button class="menu-btn" id="normalBtn">Normal Mode</button>
+            <button class="menu-btn" id="hardBtn">Hard Mode</button>
+            <button class="menu-btn" id="extremeBtn">ROTTING</button>
+            <button class="menu-btn" id="startGameBtn">Start Game</button>
+        </div>
+        <button class="menu-btn" id="howToPlayBtn">How To Play</button>
+        <button class="menu-btn" id="creditsBtn">Credits</button>
+    </div>
+    <div id="creditsScreen">
+        <button class="close-btn">Close</button>
+        <h2>Credits</h2>
+        <p>Lama Games&#x1f999;</p>
+        <p>Tower Defense Mechanic Inspired by Classic TD Games</p>
+        <p>Special Thanks to:</p>
+        <p>The Gaming Community</p>
+        <p>All Beta Testers</p>
+        <p>Version 1.0</p>
+    </div>
+    <button id="unselectButton" style="display: none; position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #ff4444; border: none; color: white; cursor: pointer; border-radius: 5px;">Cancel Placement</button>
+    <div id="countdown">20</div>
+    <div id="lives">Lives: 50</div>
+    <div id="wave">Wave: 1</div>
+    <div id="money">Money: &#x24;100</div>
+    <div id="maxWaves"></div>
+    <div id="gameOver">GAME OVER</div>
+    <button id="retryButton">Retry</button>
+    <div id="tabMenu" style="position: fixed; top: 20px; right: 20px;">
+        <button class="tab-btn active" data-tab="modifiers">Modifiers</button>
+        <button class="tab-btn" data-tab="difficulty">Difficulty</button>
+    </div>
+
+    <div id="modifiersMenu" class="tab-content active">
+        <h3>Modifiers</h3>
+        <button class="modifier-btn" id="fasterEnemiesBtn">Fast Enemies: OFF</button>
+        <button class="modifier-btn" id="strongerEnemiesBtn">Strong Enemies: OFF</button>
+        <button class="modifier-btn" id="strongestEnemiesBtn">Strongest Enemies: OFF</button>
+        <button class="modifier-btn" id="sharpEyesBtn">Sharp Eyes: OFF</button>
+        <button class="modifier-btn" id="biggerMusclesBtn">Bigger Muscles: OFF</button>
+        <button class="modifier-btn" id="lazyEnemiesBtn">Lazy Enemies: OFF</button>
+        <button class="modifier-btn" id="weakerEnemiesBtn">Weaker Enemies: OFF</button>
+    </div>
+
+    <div id="difficultyMenu" class="tab-content">
+        <h3>Difficulty Settings</h3>
+        <button class="modifier-btn" id="difficultyBtn">Difficulty: Normal</button>
+    </div>
+
+    <div id="upgradeMenu">
+        <h3>Tower Upgrades</h3>
+        <div id="towerStats">
+            <p>Current Stats:</p>
+            <p id="damageText">Damage: 1</p>
+            <p id="rangeText">Range: 100</p>
+            <p id="fireRateText">Fire Rate: 1/s</p>
+        </div>
+        <div id="nextLevelStats" style="display: none">
+            <p>Next Level Stats:</p>
+            <p id="nextDamageText">Damage: 1</p>
+            <p id="nextRangeText">Range: 150</p>
+            <p id="nextFireRateText">Fire Rate: 1/s</p>
+        </div>
+        <div id="upgradePaths" style="margin-top: 10px;">
+            <h4>Upgrade Path</h4>
+            <button class="path-btn" data-path="1">Path 1</button>
+            <button class="path-btn" data-path="2">Path 2</button>
+            <button class="path-btn" data-path="3">Path 3</button>
+        </div>
+        <button class="upgrade-btn" id="upgradeBtn">Upgrade to Level 2 (&#x24;50)</button>
+        <button class="upgrade-btn" id="sellBtn">Sell Tower</button>
+    </div>
+
+    <div id="victoryScreen" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+        <h1 style="color: gold; font-size: 72px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">VICTORY!</h1>
+        <h2 style="color: #4CAF50; font-size: 36px;">You&apos;ve defeated the Final Boss!</h2>
+    </div>
+    <div id="freeplayPrompt" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px; border-radius: 5px; text-align: center;">
+        <h2>Congratulations!</h2>
+        <p>You&apos;ve completed all waves! Would you like to continue with freeplay?</p>
+        <button class="menu-btn" id="startFreeplayBtn">Start Freeplay</button>
+        <button class="menu-btn" id="endGameBtn">End Game</button>
+    </div>
+    <div id="towerSelection">
+        <button class="tower-select-btn" data-tower="noob">Place Noob Tower (&#x24;50)</button>
+        <button class="tower-select-btn" data-tower="casual">Place Casual Tower (&#x24;150)</button>
+        <button class="tower-select-btn" data-tower="intermediate">Place Intermediate Tower (&#x24;250)</button>
+        <button class="tower-select-btn" data-tower="semipro">Place Semi-Pro Tower (&#x24;300)</button>
+        <button class="tower-select-btn" data-tower="pro">Place Pro Tower (&#x24;500)</button>
+        <button class="tower-select-btn" data-tower="moneymaker">Place Money Maker (&#x24;400)</button>
+        <button class="tower-select-btn" data-tower="poison">Place Poison Tower (&#x24;350)</button>
+        <button class="tower-select-btn" data-tower="bomb">Place Bomb Tower (&#x24;600)</button>
+        <button class="tower-select-btn" data-tower="ice">Place Ice Tower (&#x24;450)</button>
+        <button class="tower-select-btn" data-tower="support">Place Support Tower (&#x24;700)</button>
+    </div>
+    <button id="circleButton">
+      <img src="/8BA84B46-C0AC-4E67-9E48-DA671812C951.png" alt="Logo" style="width: 60px; height: 60px;">
+    </button>
+<script>const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth - 100;
+canvas.height = window.innerHeight;
+let mainMenuVisible = true;
+let selectedDifficulty = 'normal';
+let skipCountdown = false;
+let maxWaves;
+let inFreeplay = false;
+let selectedMap = 'grassland';
+function hideMainMenu() {
+  document.getElementById('mainMenu').style.display = 'none';
+  mainMenuVisible = false;
+  unselectButton.style.display = 'none';
+  if (selectedMap === 'grassland') {
+    canvas.style.background = '#65A765';
+    ctx.fillStyle = '#2D5A27';
+  }
+  if (!skipCountdown) {
+    startCountdown();
+  } else {
+    countdownElement.style.display = 'none';
+    gameState.gameStarted = true;
+  }
+  maxWaves = selectedDifficulty === 'easy' ? 40 : selectedDifficulty === 'normal' ? 60 : selectedDifficulty === 'hard' ? 80 : 100;
+  document.getElementById('maxWaves').textContent = `Wave: ${gameState.currentWave}/${maxWaves}`;
+}
+function showMainMenu() {
+  document.getElementById('mainMenu').style.display = 'flex';
+  mainMenuVisible = true;
+}
+function showHowToPlay() {
+  alert("How to Play Lama TD:\n\n" + "1. Place towers to defend against waves of enemies\n" + "2. Different towers have different abilities and costs\n" + "3. Upgrade towers by clicking on them\n" + "4. Choose upgrade paths to specialize your towers\n" + "5. Survive all waves and defeat the final boss!\n\n" + "Tips:\n" + "- Use modifiers to adjust difficulty\n" + "- Sell towers to get back 50% of their cost\n" + "- Complete waves for bonus money");
+}
+function showCredits() {
+  document.getElementById('creditsScreen').style.display = 'flex';
+}
+function hideCredits() {
+  document.getElementById('creditsScreen').style.display = 'none';
+}
+function createExplosion(x, y, radius) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
+  ctx.fill();
+}
+const gameState = {
+  towers: [],
+  enemies: [],
+  money: 100,
+  lives: 50,
+  placing: false,
+  path: [{
+    x: 0,
+    y: canvas.height / 2
+  }, {
+    x: canvas.width,
+    y: canvas.height / 2
+  }],
+  gameStarted: false,
+  difficulty: 1,
+  fasterEnemies: false,
+  strongerEnemies: false,
+  strongestEnemies: false,
+  sharpEyes: false,
+  biggerMuscles: false,
+  gameOver: false,
+  currentWave: 1,
+  enemiesInWave: 3,
+  enemiesSpawned: 0,
+  waveComplete: true,
+  waveBonusGiven: false,
+  selectedTowerType: 'noob',
+  lazyEnemies: false,
+  weakerEnemies: false,
+  moneymaker: null
+};
+let countdownTime = 20;
+const countdownElement = document.getElementById('countdown');
+const modifiersMenu = document.getElementById('modifiersMenu');
+const livesElement = document.getElementById('lives');
+const waveElement = document.getElementById('wave');
+const gameOverElement = document.getElementById('gameOver');
+let placementGhost = null;
+const TREE_COUNT = 20;
+const trees = [];
+for (let i = 0; i < TREE_COUNT; i++) {
+  let x, y;
+  let validPosition = false;
+  while (!validPosition) {
+    x = Math.random() * canvas.width;
+    y = Math.random() * canvas.height;
+    if (Math.abs(y - canvas.height / 2) < 80) continue;
+    const tooCloseToTrees = trees.some(tree => Math.hypot(x - tree.x, y - tree.y) < 100);
+    if (!tooCloseToTrees) {
+      validPosition = true;
+    }
+  }
+  trees.push({
+    x,
+    y
+  });
+}
+const CLIFF_COUNT = 8;
+const cliffs = [];
+for (let i = 0; i < CLIFF_COUNT; i++) {
+  let x, y;
+  let validPosition = false;
+  while (!validPosition) {
+    x = Math.random() * canvas.width;
+    y = Math.random() * canvas.height;
+    if (Math.abs(y - canvas.height / 2) < 20) continue;
+    const tooCloseToTrees = trees.some(tree => Math.hypot(x - tree.x, y - tree.y) < 60);
+    const tooCloseToCliffs = cliffs.some(cliff => Math.hypot(x - cliff.x, y - cliff.y) < 80);
+    if (!tooCloseToTrees && !tooCloseToCliffs) {
+      validPosition = true;
+    }
+  }
+  cliffs.push({
+    x,
+    y,
+    radius: 30
+  });
+}
+function startCountdown() {
+  if (mainMenuVisible) return;
+  countdownTime = 20;
+  const countdownInterval = setInterval(() => {
+    countdownTime--;
+    countdownElement.textContent = countdownTime;
+    if (countdownTime <= 0) {
+      clearInterval(countdownInterval);
+      countdownElement.style.display = 'none';
+      document.querySelectorAll('.tab-content').forEach(menu => {
+        menu.style.opacity = '0';
+        setTimeout(() => {
+          menu.style.display = 'none';
+        }, 500);
+      });
+      document.getElementById('tabMenu').style.display = 'none';
+      gameState.gameStarted = true;
+    }
+  }, 1000);
+}
+startCountdown();
+class Tower {
+  constructor(x, y, type = 'noob') {
+    const upgradeCosts = {
+      'noob': [null, 50, 100, 200],
+      'casual': [null, 200, 300, 400],
+      'intermediate': [null, 350, 500, 750],
+      'semipro': [null, 350, 500, 1000],
+      'pro': [null, 400, 600, 1200],
+      'moneymaker': [null, 500, 750, 1000],
+      'poison': [null, 400, 600, 800],
+      'bomb': [null, 500, 750, 1000],
+      'ice': [null, 400, 600, 800],
+      'support': [null, 500, 750, 1000]
+    };
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    if (type === 'noob') {
+      this.range = 100;
+      this.damage = 1;
+      this.fireRate = 1000;
+      this.name = "Noob";
+      this.level = 1;
+      this.totalCost = 50;
+    } else if (type === 'casual') {
+      this.range = 200;
+      this.damage = 0;
+      this.fireRate = 2000;
+      this.name = "Casual";
+      this.level = 1;
+      this.totalCost = 150;
+      this.slowAmount = 0.2;
+      this.slowDuration = 10000;
+    } else if (type === 'intermediate') {
+      this.range = 100;
+      this.damage = 1;
+      this.fireRate = 333;
+      this.name = "Intermediate";
+      this.level = 1;
+      this.totalCost = 250;
+    } else if (type === 'semipro') {
+      this.range = 300;
+      this.damage = 10;
+      this.fireRate = 2000;
+      this.name = "Semi-Pro";
+      this.level = 1;
+      this.totalCost = 300;
+    } else if (type === 'pro') {
+      this.range = 300;
+      this.damage = 2;
+      this.fireRate = 200;
+      this.name = "Pro";
+      this.level = 1;
+      this.totalCost = 500;
+    } else if (type === 'moneymaker') {
+      this.range = 0;
+      this.damage = 0;
+      this.fireRate = 0;
+      this.name = "Money Maker";
+      this.level = 1;
+      this.totalCost = 400;
+      this.moneyPerRound = 100;
+      this.moneyInterval = 0;
+      this.lastMoneyTime = Date.now();
+    } else if (type === 'poison') {
+      this.range = 150;
+      this.damage = 0.5;
+      this.fireRate = 1000;
+      this.name = "Poison";
+      this.level = 1;
+      this.totalCost = 350;
+      this.poisonDuration = 5000;
+      this.poisonTickRate = 500;
+    } else if (type === 'bomb') {
+      this.range = 200;
+      this.damage = 5;
+      this.fireRate = 2000;
+      this.name = "Bomb";
+      this.level = 1;
+      this.totalCost = 600;
+      this.explosionRadius = 80;
+    } else if (type === 'ice') {
+      this.range = 150;
+      this.damage = 0.5;
+      this.fireRate = 2000;
+      this.name = "Ice";
+      this.level = 1;
+      this.totalCost = 450;
+      this.freezeDuration = 3000;
+      this.freezeChance = 0.7;
+    } else if (type === 'support') {
+      this.range = 150;
+      this.damage = 0;
+      this.fireRate = 0;
+      this.name = "Support";
+      this.level = 1;
+      this.totalCost = 700;
+      this.damageBoost = 0.2;
+      this.rangeBoost = 0.2;
+      this.fireRateBoost = 0.2;
+    }
+    this.lastShot = 0;
+    this.selectedPaths = [];
+    this.maxPaths = 2;
+  }
+  selectPath(pathNum) {
+    if (this.selectedPaths.length < this.maxPaths && !this.selectedPaths.includes(pathNum)) {
+      this.selectedPaths.push(pathNum);
+      return true;
+    }
+    return false;
+  }
+  getPathName(pathNum) {
+    const pathNames = {
+      noob: {
+        1: "Heavy Strike - Increased Damage",
+        2: "Long Range - Extended Range", 
+        3: "Quick Fire - Faster Attack Speed"
+      },
+      casual: {
+        1: "Power Slow - More Damage",
+        2: "Far Reach - Extended Range",
+        3: "Deep Freeze - Enhanced Slow Effect"  
+      },
+      intermediate: {
+        1: "Piercing Shot - Higher Damage",
+        2: "Scout Vision - Extended Range", 
+        3: "Rapid Fire - Much Faster Attacks"
+      },
+      semipro: {
+        1: "Expert Shot - Massive Damage",
+        2: "Eagle Eye - Huge Range Boost",
+        3: "Quick Draw - Attack Speed Boost"
+      },
+      pro: {
+        1: "Master Strike - Ultimate Damage",
+        2: "Sniper Scope - Maximum Range",
+        3: "Lightning Fast - Extreme Speed"
+      },
+      moneymaker: {
+        1: "Gold Rush - More Money Per Round",
+        2: "Quick Cash - Faster Money Generation",
+        3: "Fortune - Both Money Upgrades"
+      },
+      poison: {
+        1: "Toxic - Increased Poison Damage",
+        2: "Spread - Extended Range",
+        3: "Lingering - Longer Poison Duration"
+      },
+      bomb: {
+        1: "Big Boom - More Explosion Damage",
+        2: "Wide Blast - Extended Range",
+        3: "Shockwave - Larger Explosion Radius"
+      },
+      ice: {
+        1: "Deep Freeze - More Freeze Damage",
+        2: "Lasting Chill - Longer Freeze Duration",
+        3: "Arctic Wind - Higher Freeze Chance"
+      },
+      support: {
+        1: "Empowered - Stronger Boosts",
+        2: "Wide Reach - Extended Range",
+        3: "Efficiency - Better Fire Rate Boost"
+      }
+    };
+    return pathNames[this.type]?.[pathNum] || `Path ${pathNum}`;
+  }
+  upgrade() {
+    this.level++;
+    if (this.type === 'noob') {
+      switch (this.level) {
+        case 2:
+          this.applyPathUpgrades(2);
+          this.totalCost += 50;
+          break;
+        case 3:
+          this.applyPathUpgrades(3);
+          this.totalCost += 100;
+          break;
+        case 4:
+          this.applyPathUpgrades(4);
+          this.totalCost += 200;
+          break;
+      }
+    } else if (this.type === 'casual') {
+      switch (this.level + 1) {
+        case 2:
+          this.applyPathUpgrades(2);
+          this.slowAmount = 0.3;
+          this.damage = 1;
+          this.totalCost += 200;
+          break;
+        case 3:
+          this.applyPathUpgrades(3);
+          this.slowAmount = 0.4;
+          this.damage = 2;
+          this.totalCost += 300;
+          break;
+        case 4:
+          this.applyPathUpgrades(4);
+          this.slowAmount = 0.5;
+          this.damage = 3;
+          this.totalCost += 400;
+          break;
+      }
+    } else if (this.type === 'intermediate') {
+      switch (this.level + 1) {
+        case 2:
+          this.applyPathUpgrades(2);
+          this.range = 150;
+          this.totalCost += 350;
+          break;
+        case 3:
+          this.applyPathUpgrades(3);
+          this.damage = 2;
+          this.fireRate = 250;
+          this.totalCost += 500;
+          break;
+        case 4:
+          this.applyPathUpgrades(4);
+          this.range = 200;
+          this.fireRate = 200;
+          this.totalCost += 750;
+          break;
+      }
+    } else if (this.type === 'semipro') {
+      switch (this.level + 1) {
+        case 2:
+          this.applyPathUpgrades(2);
+          this.damage = 15;
+          this.range = 350;
+          this.totalCost += 350;
+          break;
+        case 3:
+          this.applyPathUpgrades(3);
+          this.damage = 20;
+          this.range = 400;
+          this.totalCost += 500;
+          break;
+        case 4:
+          this.applyPathUpgrades(4);
+          this.damage = 30;
+          this.range = 500;
+          this.fireRate = 1667;
+          this.totalCost += 1000;
+          break;
+      }
+    } else if (this.type === 'pro') {
+      switch (this.level + 1) {
+        case 2:
+          this.applyPathUpgrades(2);
+          this.damage = 3;
+          this.range = 350;
+          this.totalCost += 400;
+          break;
+        case 3:
+          this.applyPathUpgrades(3);
+          this.damage = 4;
+          this.range = 400;
+          this.totalCost += 600;
+          break;
+        case 4:
+          this.applyPathUpgrades(4);
+          this.damage = 5;
+          this.range = 500;
+          this.fireRate = 100;
+          this.totalCost += 1200;
+          break;
+      }
+    } else if (this.type === 'moneymaker') {
+      switch (this.level + 1) {
+        case 2:
+          this.moneyPerRound = 150;
+          this.moneyInterval = 20000;
+          this.totalCost += 500;
+          break;
+        case 3:
+          this.moneyPerRound = 200;
+          this.moneyInterval = 15000;
+          this.totalCost += 750;
+          break;
+        case 4:
+          this.moneyPerRound = 300;
+          this.moneyInterval = 10000;
+          this.totalCost += 1000;
+          break;
+      }
+    } else if (this.type === 'poison') {
+      switch (this.level) {
+        case 2:
+          this.damage = 1;
+          this.range = 200;
+          this.poisonDuration = 7000;
+          this.totalCost += 400;
+          break;
+        case 3:
+          this.damage = 1.5;
+          this.range = 250;
+          this.poisonDuration = 10000;
+          this.totalCost += 600;
+          break;
+        case 4:
+          this.damage = 2;
+          this.range = 300;
+          this.poisonDuration = 15000;
+          this.totalCost += 800;
+          break;
+      }
+    } else if (this.type === 'bomb') {
+      switch (this.level) {
+        case 2:
+          this.damage = 8;
+          this.range = 250;
+          this.explosionRadius = 100;
+          this.totalCost += 500;
+          break;
+        case 3:
+          this.damage = 12;
+          this.range = 300;
+          this.explosionRadius = 120;
+          this.totalCost += 750;
+          break;
+        case 4:
+          this.damage = 20;
+          this.range = 350;
+          this.explosionRadius = 150;
+          this.fireRate = 1500;
+          this.totalCost += 1000;
+          break;
+      }
+    } else if (this.type === 'ice') {
+      switch (this.level) {
+        case 2:
+          this.damage = 1;
+          this.freezeDuration = 4000;
+          this.freezeChance = 0.8;
+          this.totalCost += 400;
+          break;
+        case 3:
+          this.damage = 1.5;
+          this.freezeDuration = 5000;
+          this.freezeChance = 0.9;
+          this.totalCost += 600;
+          break;
+        case 4:
+          this.damage = 2;
+          this.freezeDuration = 6000;
+          this.freezeChance = 1;
+          this.totalCost += 800;
+          break;
+      }
+    } else if (this.type === 'support') {
+      switch (this.level) {
+        case 2:
+          this.damageBoost = 0.3;
+          this.rangeBoost = 0.3;
+          this.fireRateBoost = 0.3;
+          this.range = 200;
+          this.totalCost += 500;
+          break;
+        case 3:
+          this.damageBoost = 0.4;
+          this.rangeBoost = 0.4;
+          this.fireRateBoost = 0.4;
+          this.range = 250;
+          this.totalCost += 750;
+          break;
+        case 4:
+          this.damageBoost = 0.5;
+          this.rangeBoost = 0.5;
+          this.fireRateBoost = 0.5;
+          this.range = 300;
+          this.totalCost += 1000;
+          break;
+      }
+    }
+  }
+  applyPathUpgrades(level) {
+    this.selectedPaths.forEach(path => {
+      const upgrades = this.getPathUpgrades(path, level);
+      this.damage += upgrades.damage || 0;
+      this.range += upgrades.range || 0;
+      this.fireRate = upgrades.fireRate || this.fireRate;
+      this.moneyPerRound = upgrades.moneyPerRound || this.moneyPerRound;
+      this.moneyInterval = upgrades.moneyInterval || this.moneyInterval;
+      this.slowAmount = upgrades.slowAmount || this.slowAmount;
+    });
+  }
+  getPathUpgrades(path, level) {
+    const upgrades = {
+      noob: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 2
+          },
+          4: {
+            damage: 3
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            fireRate: 800
+          },
+          3: {
+            fireRate: 600
+          },
+          4: {
+            fireRate: 400
+          }
+        }
+      },
+      casual: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 2
+          },
+          4: {
+            damage: 3
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            slowAmount: 0.1
+          },
+          3: {
+            slowAmount: 0.2
+          },
+          4: {
+            slowAmount: 0.3
+          }
+        }
+      },
+      intermediate: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 2
+          },
+          4: {
+            damage: 3
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            fireRate: 250
+          },
+          3: {
+            fireRate: 200
+          },
+          4: {
+            fireRate: 150
+          }
+        }
+      },
+      semipro: {
+        1: {
+          2: {
+            damage: 5
+          },
+          3: {
+            damage: 10
+          },
+          4: {
+            damage: 15
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            fireRate: 1500
+          },
+          3: {
+            fireRate: 1000
+          },
+          4: {
+            fireRate: 500
+          }
+        }
+      },
+      pro: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 2
+          },
+          4: {
+            damage: 3
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            fireRate: 150
+          },
+          3: {
+            fireRate: 100
+          },
+          4: {
+            fireRate: 50
+          }
+        }
+      },
+      moneymaker: {
+        1: {
+          2: {
+            moneyPerRound: 25
+          },
+          3: {
+            moneyPerRound: 50
+          },
+          4: {
+            moneyPerRound: 100
+          }
+        },
+        2: {
+          2: {
+            moneyInterval: -2000
+          },
+          3: {
+            moneyInterval: -3000
+          },
+          4: {
+            moneyInterval: -5000
+          }
+        },
+        3: {
+          2: {
+            moneyPerRound: 50,
+            moneyInterval: -1000
+          },
+          3: {
+            moneyPerRound: 75,
+            moneyInterval: -2000
+          },
+          4: {
+            moneyPerRound: 100,
+            moneyInterval: -3000
+          }
+        }
+      },
+      poison: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 1.5
+          },
+          4: {
+            damage: 2
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            poisonDuration: 2000
+          },
+          3: {
+            poisonDuration: 3000
+          },
+          4: {
+            poisonDuration: 5000
+          }
+        }
+      },
+      bomb: {
+        1: {
+          2: {
+            damage: 1
+          },
+          3: {
+            damage: 2
+          },
+          4: {
+            damage: 3
+          }
+        },
+        2: {
+          2: {
+            range: 50
+          },
+          3: {
+            range: 75
+          },
+          4: {
+            range: 100
+          }
+        },
+        3: {
+          2: {
+            explosionRadius: 20
+          },
+          3: {
+            explosionRadius: 30
+          },
+          4: {
+            explosionRadius: 40
+          }
+        }
+      },
+      ice: {
+        1: {
+          2: {
+            damage: 0.5
+          },
+          3: {
+            damage: 1
+          },
+          4: {
+            damage: 1.5
+          }
+        },
+        2: {
+          2: {
+            freezeDuration: 1000
+          },
+          3: {
+            freezeDuration: 2000
+          },
+          4: {
+            freezeDuration: 3000
+          }
+        },
+        3: {
+          2: {
+            freezeChance: 0.1
+          },
+          3: {
+            freezeChance: 0.2
+          },
+          4: {
+            freezeChance: 0.3
+          }
+        }
+      },
+      support: {
+        1: {
+          2: {
+            damageBoost: 0.1
+          },
+          3: {
+            damageBoost: 0.15
+          },
+          4: {
+            damageBoost: 0.2
+          }
+        },
+        2: {
+          2: {
+            range: 50,
+            rangeBoost: 0.1
+          },
+          3: {
+            range: 75,
+            rangeBoost: 0.15
+          },
+          4: {
+            range: 100,
+            rangeBoost: 0.2
+          }
+        },
+        3: {
+          2: {
+            fireRateBoost: 0.1
+          },
+          3: {
+            fireRateBoost: 0.15
+          },
+          4: {
+            fireRateBoost: 0.2
+          }
+        }
+      }
+    };
+    return upgrades[this.type]?.[path]?.[level] || {};
+  }
+  generateMoney() {
+    if (this.type === 'moneymaker') {
+      const now = Date.now();
+      if (this.moneyInterval > 0 && now - this.lastMoneyTime >= this.moneyInterval) {
+        gameState.money += this.moneyPerRound;
+        this.lastMoneyTime = now;
+      }
+    }
+  }
+  sell() {
+    return Math.floor(this.totalCost * 0.5);
+  }
+  draw() {
+    ctx.beginPath();
+    if (this.type === 'moneymaker') {
+      ctx.fillStyle = '#FFD700';
+    } else if (this.type === 'bomb') {
+      ctx.fillStyle = '#FF4500';
+    } else if (this.type === 'ice') {
+      ctx.fillStyle = '#00CED1';
+    } else if (this.type === 'support') {
+      ctx.fillStyle = '#9370DB';
+    } else {
+      ctx.fillStyle = '#4a4a4a';
+    }
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    if (this.type === 'moneymaker') {
+      ctx.fillStyle = '#000';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('M', this.x, this.y + 8);
+    } else if (this.type === 'support') {
+      ctx.fillStyle = '#fff';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('+', this.x, this.y + 8);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(147, 112, 219, 0.1)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(this.x - 10, this.y);
+      ctx.lineTo(this.x + 10, this.y);
+      ctx.moveTo(this.x, this.y - 10);
+      ctx.lineTo(this.x, this.y + 10);
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+    const displayRange = gameState.sharpEyes ? this.range * 1.5 : this.range;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, displayRange, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.stroke();
+    ctx.fillStyle = 'white';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${this.name} Lv${this.level}`, this.x, this.y - 30);
+  }
+  shoot() {
+    const now = Date.now();
+    if (now - this.lastShot >= this.fireRate) {
+      for (let enemy of gameState.enemies) {
+        const effectiveRange = gameState.sharpEyes ? this.range * 1.5 : this.range;
+        const dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+        if (dist <= effectiveRange) {
+          const effectiveDamage = gameState.biggerMuscles ? this.damage * 2 : this.damage;
+          if (this.type === 'bomb') {
+            const enemiesInRange = gameState.enemies.filter(e => Math.hypot(enemy.x - e.x, enemy.y - e.y) <= this.explosionRadius);
+            createExplosion(enemy.x, enemy.y, this.explosionRadius);
+            enemiesInRange.forEach(e => {
+              e.hp -= effectiveDamage;
+            });
+          } else if (this.type === 'ice') {
+            if (Math.random() < this.freezeChance && !enemy.frozen) {
+              enemy.frozen = true;
+              enemy.frozenEndTime = Date.now() + this.freezeDuration;
+            }
+            enemy.hp -= effectiveDamage;
+            this.lastShot = now;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(enemy.x, enemy.y);
+            ctx.strokeStyle = '#00CED1';
+            ctx.stroke();
+          } else {
+            enemy.hp -= effectiveDamage;
+            if (this.type === 'casual') {
+              enemy.slowEffect = this.slowAmount;
+              enemy.slowDuration = this.slowDuration;
+              enemy.slowStart = now;
+            }
+            if (this.type === 'poison') {
+              if (!enemy.poisoned || enemy.poisonEndTime < now) {
+                enemy.poisoned = true;
+                enemy.poisonDamage = this.damage;
+                enemy.poisonEndTime = now + this.poisonDuration;
+                enemy.lastPoisonTick = now;
+              }
+            }
+            this.lastShot = now;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(enemy.x, enemy.y);
+            if (this.type === 'casual') {
+              ctx.strokeStyle = 'blue';
+            } else if (this.type === 'poison') {
+              ctx.strokeStyle = 'green';
+            } else {
+              ctx.strokeStyle = 'yellow';
+            }
+            ctx.stroke();
+          }
+          break;
+        }
+      }
+    }
+  }
+}
+class Enemy {
+  constructor(type = 'normal') {
+    this.x = 0;
+    this.y = canvas.height / 2;
+    this.type = type;
+    if (type === 'boss') {
+      this.baseHp = 750;
+      this.size = 25;
+      this.baseSpeed = 0.8;
+    } else if (type === 'megaboss') {
+      this.baseHp = 3750;
+      this.size = 35;
+      this.baseSpeed = 0.6;
+    } else {
+      this.size = 15;
+      this.baseHp = type === 'tank' ? 7 : 2.5;
+      if (type === 'fast') {
+        this.baseSpeed = 3;
+      } else if (type === 'tank') {
+        this.baseSpeed = 1.5;
+      } else {
+        this.baseSpeed = 2.5;
+      }
+    }
+    let modifiedHp = this.baseHp;
+    modifiedHp *= (selectedDifficulty === 'easy' ? 0.75 : selectedDifficulty === 'hard' ? 1.5 : 1) * gameState.difficulty;
+    if (gameState.strongestEnemies) {
+      modifiedHp *= 3;
+    } else if (gameState.strongerEnemies) {
+      modifiedHp *= 2;
+    }
+    if (gameState.weakerEnemies) {
+      modifiedHp /= 2;
+    }
+    this.hp = modifiedHp;
+    let modifiedSpeed = this.baseSpeed;
+    if (gameState.fasterEnemies) {
+      modifiedSpeed *= 1.5;
+    }
+    if (gameState.lazyEnemies) {
+      modifiedSpeed /= 2;
+    }
+    this.speed = modifiedSpeed;
+    this.slowEffect = 0;
+    this.slowDuration = 0;
+    this.slowStart = 0;
+    this.splitFrom = null;
+    if (type !== 'boss' && type !== 'normal' && type !== 'megaboss') {
+      this.baseHp *= 0.75;
+      this.hp *= 0.75;
+    }
+    this.poisoned = false;
+    this.poisonDamage = 0;
+    this.poisonEndTime = 0;
+    this.lastPoisonTick = 0;
+    this.frozen = false;
+    this.frozenEndTime = 0;
+  }
+  draw() {
+    ctx.beginPath();
+    if (this.type === 'megaboss') {
+      ctx.fillStyle = '#FF0000';
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(this.x - 20, this.y - 35);
+      ctx.lineTo(this.x - 15, this.y - 45);
+      ctx.lineTo(this.x - 10, this.y - 35);
+      ctx.lineTo(this.x, this.y - 45);
+      ctx.lineTo(this.x + 10, this.y - 35);
+      ctx.lineTo(this.x + 15, this.y - 45);
+      ctx.lineTo(this.x + 20, this.y - 35);
+      ctx.fillStyle = '#FFD700';
+      ctx.fill();
+      ctx.strokeStyle = '#DAA520';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y + 5, 15, Math.PI, 2 * Math.PI, true);
+      ctx.strokeStyle = '#000000';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(this.x - 10, this.y - 5, 3, 0, Math.PI * 2);
+      ctx.arc(this.x + 10, this.y - 5, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#000000';
+      ctx.fill();
+    } else if (this.type === 'boss') {
+      ctx.fillStyle = 'gold';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(this.x - 15, this.y - 25);
+      ctx.lineTo(this.x - 10, this.y - 35);
+      ctx.lineTo(this.x - 5, this.y - 25);
+      ctx.lineTo(this.x, this.y - 35);
+      ctx.lineTo(this.x + 5, this.y - 25);
+      ctx.lineTo(this.x + 10, this.y - 35);
+      ctx.lineTo(this.x + 15, this.y - 25);
+      ctx.fillStyle = 'yellow';
+      ctx.fill();
+      ctx.strokeStyle = '#DAA520';
+      ctx.stroke();
+    } else if (this.type === 'fast') {
+      ctx.fillStyle = 'rgba(200,200,255,0.8)';
+    } else if (this.type === 'tank') {
+      ctx.fillStyle = 'rgba(200,200,200,0.8)';
+    } else {
+      ctx.fillStyle = 'rgba(255,200,200,0.8)';
+    }
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    if (this.poisoned) {
+      ctx.fillStyle = 'rgba(75, 0, 130, 0.3)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size + 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (this.frozen) {
+      ctx.fillStyle = 'rgba(0, 191, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size + 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    let maxHp = this.baseHp;
+    maxHp *= (selectedDifficulty === 'easy' ? 0.75 : selectedDifficulty === 'hard' ? 1.5 : 1) * gameState.difficulty;
+    if (this.type === 'fast') {
+      maxHp *= 0.75;
+    }
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(this.x - 15, this.y - 40, 30 * (this.hp / maxHp), 5);
+  }
+  move() {
+    let currentSpeed = this.speed;
+    if (this.slowEffect > 0) {
+      if (Date.now() - this.slowStart > this.slowDuration) {
+        this.slowEffect = 0;
+      } else {
+        currentSpeed *= 1 - this.slowEffect;
+      }
+    }
+    if (this.frozen) {
+      if (Date.now() >= this.frozenEndTime) {
+        this.frozen = false;
+      } else {
+        return;
+      }
+    }
+    if (this.poisoned) {
+      const now = Date.now();
+      if (now < this.poisonEndTime && now - this.lastPoisonTick >= 500) {
+        this.hp -= this.poisonDamage;
+        this.lastPoisonTick = now;
+      } else if (now >= this.poisonEndTime) {
+        this.poisoned = false;
+      }
+    }
+    if (this.type === 'megaboss' && Math.random() < 0.01) {
+      this.y += (Math.random() - 0.5) * 10;
+      this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+    }
+    this.x += currentSpeed;
+  }
+}
+function resetGame() {
+  gameState.enemies = [];
+  gameState.towers = [];
+  gameState.money = selectedDifficulty === 'easy' ? 200 : selectedDifficulty === 'hard' ? 50 : selectedDifficulty === 'extreme' ? 25 : 100;
+  gameState.lives = selectedDifficulty === 'easy' ? 100 : selectedDifficulty === 'hard' ? 25 : selectedDifficulty === 'extreme' ? 10 : 50;
+  skipCountdown = selectedDifficulty === 'extreme';
+  gameState.placing = false;
+  gameState.gameStarted = false;
+  gameState.difficulty = 1;
+  gameState.fasterEnemies = false;
+  gameState.strongerEnemies = false;
+  gameState.strongestEnemies = false;
+  gameState.sharpEyes = false;
+  gameState.biggerMuscles = false;
+  gameState.gameOver = false;
+  gameState.currentWave = 1;
+  gameState.enemiesInWave = 3;
+  gameState.enemiesSpawned = 0;
+  gameState.waveComplete = true;
+  gameState.waveBonusGiven = false;
+  gameState.selectedTowerType = 'noob';
+  gameState.lazyEnemies = false;
+  gameState.weakerEnemies = false;
+  countdownTime = 20;
+  placementGhost = null;
+  selectedTower = null;
+  gameState.enemies.forEach(enemy => {
+    enemy.slowEffect = 0;
+    enemy.slowDuration = 0;
+    enemy.slowStart = 0;
+  });
+  unselectButton.style.display = 'none';
+  document.getElementById('mainMenu').style.display = 'flex';
+  mainMenuVisible = true;
+  inFreeplay = false;
+  maxWaves = selectedDifficulty === 'easy' ? 40 : selectedDifficulty === 'normal' ? 60 : selectedDifficulty === 'hard' ? 80 : 100;
+  document.getElementById('maxWaves').textContent = `Wave: ${gameState.currentWave}/${maxWaves}`;
+  selectedMap = 'grassland';
+  document.getElementById('mapSelection').style.display = 'none';
+  document.getElementById('difficultySelect').style.display = 'none';
+}
+document.getElementById('retryButton').addEventListener('click', resetGame);
+function spawnEnemy() {
+  if (!gameState.gameStarted || gameState.gameOver) return;
+  if (gameState.waveComplete && gameState.enemies.length === 0) {
+    gameState.towers.forEach(tower => {
+      if (tower && tower.type === 'moneymaker' && tower.moneyInterval === 0) {
+        gameState.money += tower.moneyPerRound;
+      }
+    });
+    gameState.enemiesSpawned = 0;
+    gameState.waveComplete = false;
+    gameState.enemiesInWave = 3 + (gameState.currentWave - 1) * 2;
+  }
+  if (!gameState.waveComplete && gameState.enemiesSpawned < gameState.enemiesInWave) {
+    const spawnChance = selectedDifficulty === 'easy' ? 0.012 : selectedDifficulty === 'hard' ? 0.025 : 0.017;
+    if (Math.random() < spawnChance) {
+      let enemyType = 'normal';
+      const roll = Math.random();
+      let bossSpawnChance = 0;
+      if (gameState.currentWave > 15) {
+        bossSpawnChance = Math.min(0.8, (gameState.currentWave - 15) * 0.025); 
+      }
+      if (gameState.currentWave >= 25 && Math.random() < 0.2) {
+        enemyType = 'megaboss';
+      } else if (gameState.currentWave === 15 && gameState.enemiesSpawned === 0) {
+        enemyType = 'boss';
+      } else if (gameState.currentWave > 15 && Math.random() < bossSpawnChance) {
+        enemyType = 'boss';
+      } else if (gameState.currentWave >= 8 && roll < 0.25) {
+        enemyType = 'tank';
+      } else if (gameState.currentWave >= 4 && roll < 0.35) {
+        enemyType = 'fast';
+      }
+      gameState.enemies.push(new Enemy(enemyType));
+      gameState.enemiesSpawned++;
+      if (gameState.enemiesSpawned >= gameState.enemiesInWave) {
+        gameState.waveComplete = true;
+        gameState.currentWave++;
+        waveElement.textContent = `Wave: ${gameState.currentWave}`;
+      }
+    }
+  }
+}
+document.getElementById('towerSelection').addEventListener('click', e => {
+  if (e.target.classList.contains('tower-select-btn')) {
+    const towerType = e.target.dataset.tower;
+    const baseCosts = {
+      'noob': 50,
+      'casual': 150,
+      'intermediate': 250,
+      'semipro': 300,
+      'pro': 500,
+      'moneymaker': 400,
+      'poison': 350,
+      'bomb': 600,
+      'ice': 450,
+      'support': 700
+    };
+    const cost = Math.floor(baseCosts[towerType] * getDifficultyMultiplier());
+    if (gameState.money >= cost && !gameState.gameOver && !gameState.placing) {
+      gameState.selectedTowerType = towerType;
+      gameState.placing = true;
+      placementGhost = null;
+      unselectButton.style.display = 'block';
+    }
+  }
+});
+const upgradeMenu = document.getElementById('upgradeMenu');
+const upgradeBtn = document.getElementById('upgradeBtn');
+const sellBtn = document.getElementById('sellBtn');
+let selectedTower = null;
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  if (gameState.placing && !gameState.gameOver) {
+    const onCliff = isOnCliff(x, y);
+    const canPlace = !gameState.towers.some(tower => Math.hypot(x - tower.x, y - tower.y) < 40) && 
+                     !isOnPath(x, y) && 
+                     !isOnTree(x, y) && 
+                     (gameState.selectedTowerType === 'semipro' ? onCliff : !onCliff);
+
+    if (canPlace) {
+      const baseCosts = {
+        'noob': 50,
+        'casual': 150,
+        'intermediate': 250,
+        'semipro': 300,
+        'pro': 500,
+        'moneymaker': 400,
+        'poison': 350,
+        'bomb': 600,
+        'ice': 450,
+        'support': 700
+      };
+      const cost = Math.floor(baseCosts[gameState.selectedTowerType] * getDifficultyMultiplier());
+      if (gameState.money >= cost) {
+        gameState.towers.push(new Tower(x, y, gameState.selectedTowerType));
+        gameState.money -= cost;
+        gameState.placing = false;
+        placementGhost = null;
+        unselectButton.style.display = 'none';
+      }
+    }
+  } else {
+    selectedTower = gameState.towers.find(tower => Math.hypot(x - tower.x, y - tower.y) < 20);
+    if (!selectedTower) {
+      upgradeMenu.style.display = 'none';
+      return;
+    }
+    upgradeMenu.style.display = 'block';
+    upgradeMenu.style.left = `${e.clientX}px`;
+    upgradeMenu.style.top = `${e.clientY}px`;
+    if (selectedTower.level < 4) {
+      const upgradeCosts = {
+        'noob': [null, 50, 100, 200],
+        'casual': [null, 200, 300, 400],
+        'intermediate': [null, 350, 500, 750],
+        'semipro': [null, 350, 500, 1000],
+        'pro': [null, 400, 600, 1200],
+        'moneymaker': [null, 500, 750, 1000],
+        'poison': [null, 400, 600, 800],
+        'bomb': [null, 500, 750, 1000],
+        'ice': [null, 400, 600, 800],
+        'support': [null, 500, 750, 1000]
+      };
+      const nextLevelCost = upgradeCosts[selectedTower.type][selectedTower.level];
+      upgradeBtn.textContent = `Upgrade to Level ${selectedTower.level + 1} ($${nextLevelCost})`;
+      upgradeBtn.disabled = gameState.money < nextLevelCost;
+    } else {
+      upgradeBtn.textContent = 'Max Level';
+      upgradeBtn.disabled = true;
+    }
+    sellBtn.textContent = `Sell Tower ($${selectedTower.sell()})`;
+    if (selectedTower.type === 'moneymaker') {
+      document.getElementById('damageText').textContent = 'Money per round: ' + selectedTower.moneyPerRound;
+      document.getElementById('rangeText').textContent = 'Money interval: ' + (selectedTower.moneyInterval ? selectedTower.moneyInterval / 1000 + 's' : 'End of round');
+      document.getElementById('fireRateText').textContent = '';
+      if (selectedTower.level < 4) {
+        let nextMoneyPerRound = selectedTower.moneyPerRound;
+        let nextMoneyInterval = selectedTower.moneyInterval;
+        switch (selectedTower.level + 1) {
+          case 2:
+            nextMoneyPerRound = 150;
+            nextMoneyInterval = 20000;
+            break;
+          case 3:
+            nextMoneyPerRound = 200;
+            nextMoneyInterval = 15000;
+            break;
+          case 4:
+            nextMoneyPerRound = 300;
+            nextMoneyInterval = 10000;
+            break;
+        }
+        document.getElementById('nextDamageText').textContent = 'Money per round: ' + nextMoneyPerRound;
+        document.getElementById('nextRangeText').textContent = 'Money interval: ' + (nextMoneyInterval ? nextMoneyInterval / 1000 + 's' : 'End of round');
+        document.getElementById('nextFireRateText').textContent = '';
+      }
+    } else {
+      document.getElementById('damageText').textContent = `Damage: ${selectedTower.damage}`;
+      document.getElementById('rangeText').textContent = `Range: ${selectedTower.range}`;
+      document.getElementById('fireRateText').textContent = `Fire Rate: ${1000 / selectedTower.fireRate}/s`;
+      if (selectedTower.level < 4) {
+        let nextDamage = selectedTower.damage;
+        let nextRange = selectedTower.range;
+        let nextFireRate = selectedTower.fireRate;
+        if (selectedTower.type === 'noob') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextRange = 150;
+              break;
+            case 3:
+              nextRange = 175;
+              nextDamage = 2;
+              break;
+            case 4:
+              nextRange = 150;
+              nextFireRate = 500;
+              break;
+          }
+        } else if (selectedTower.type === 'casual') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextFireRate = 500;
+              break;
+            case 3:
+              nextDamage = 4;
+              nextRange = 250;
+              break;
+            case 4:
+              nextDamage = 3;
+              nextFireRate = 333;
+              break;
+          }
+        } else if (selectedTower.type === 'intermediate') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextRange = 150;
+              break;
+            case 3:
+              nextDamage = 2;
+              nextFireRate = 250;
+              break;
+            case 4:
+              nextRange = 200;
+              nextFireRate = 200;
+              break;
+          }
+        } else if (selectedTower.type === 'semipro') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 15;
+              nextRange = 350;
+              break;
+            case 3:
+              nextDamage = 20;
+              nextRange = 400;
+              break;
+            case 4:
+              nextDamage = 30;
+              nextRange = 500;
+              nextFireRate = 1667;
+              break;
+          }
+        } else if (selectedTower.type === 'pro') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 3;
+              nextRange = 350;
+              break;
+            case 3:
+              nextDamage = 4;
+              nextRange = 400;
+              break;
+            case 4:
+              nextDamage = 5;
+              nextRange = 500;
+              nextFireRate = 100;
+              break;
+          }
+        } else if (selectedTower.type === 'bomb') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 8;
+              nextRange = 250;
+              break;
+            case 3:
+              nextDamage = 12;
+              nextRange = 300;
+              break;
+            case 4:
+              nextDamage = 20;
+              nextRange = 350;
+              nextFireRate = 1500;
+              break;
+          }
+        } else if (selectedTower.type === 'ice') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 1;
+              nextRange = 150;
+              break;
+            case 3:
+              nextDamage = 1.5;
+              nextRange = 150;
+              break;
+            case 4:
+              nextDamage = 2;
+              nextRange = 150;
+              break;
+          }
+        } else if (selectedTower.type === 'support') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 0;
+              nextRange = 200;
+              break;
+            case 3:
+              nextDamage = 0;
+              nextRange = 250;
+              break;
+            case 4:
+              nextDamage = 0;
+              nextRange = 300;
+              break;
+          }
+        }
+        document.getElementById('nextDamageText').textContent = `Damage: ${nextDamage}`;
+        document.getElementById('nextRangeText').textContent = `Range: ${nextRange}`;
+        document.getElementById('nextFireRateText').textContent = `Fire Rate: ${1000 / nextFireRate}/s`;
+      }
+    }
+    const nextLevelStats = document.getElementById('nextLevelStats');
+    if (selectedTower.level < 4) {
+      nextLevelStats.style.display = 'block';
+    } else {
+      nextLevelStats.style.display = 'none';
+    }
+    if (selectedTower) {
+      const pathButtons = document.querySelectorAll('.path-btn');
+      pathButtons.forEach(btn => {
+        const pathNum = parseInt(btn.dataset.path);
+        const pathName = selectedTower.getPathName(pathNum);
+        btn.innerHTML = `<p class="path-name">${pathName}</p>Path ${pathNum}`;
+        btn.classList.remove('selected');
+        btn.classList.remove('disabled');
+        if (selectedTower.selectedPaths.includes(pathNum)) {
+          btn.classList.add('selected');
+        } else if (selectedTower.selectedPaths.length >= selectedTower.maxPaths) {
+          btn.classList.add('disabled');
+        }
+        btn.onclick = () => {
+          if (!btn.classList.contains('disabled')) {
+            if (selectedTower.selectPath(pathNum)) {
+              btn.classList.add('selected');
+              if (selectedTower.selectedPaths.length >= selectedTower.maxPaths) {
+                pathButtons.forEach(b => {
+                  if (!b.classList.contains('selected')) {
+                    b.classList.add('disabled');
+                  }
+                });
+              }
+            }
+          }
+        };
+      });
+    }
+  }
+});
+upgradeBtn.addEventListener('click', () => {
+  if (selectedTower && selectedTower.selectedPaths.length > 0 && selectedTower.level < 4) {
+    const upgradeCosts = {
+      'noob': [null, 50, 100, 200],
+      'casual': [null, 200, 300, 400],
+      'intermediate': [null, 350, 500, 750],
+      'semipro': [null, 350, 500, 1000],
+      'pro': [null, 400, 600, 1200],
+      'moneymaker': [null, 500, 750, 1000],
+      'poison': [null, 400, 600, 800],
+      'bomb': [null, 500, 750, 1000],
+      'ice': [null, 400, 600, 800],
+      'support': [null, 500, 750, 1000]
+    };
+    const upgradeCost = upgradeCosts[selectedTower.type][selectedTower.level];
+    if (!upgradeCost) {
+      console.error('Invalid upgrade cost');
+      return;
+    }
+    if (gameState.money >= upgradeCost) {
+      gameState.money -= upgradeCost;
+      selectedTower.upgrade();
+      if (selectedTower) {
+        document.getElementById('damageText').textContent = `Damage: ${selectedTower.damage}`;
+        document.getElementById('rangeText').textContent = `Range: ${selectedTower.range}`;
+        document.getElementById('fireRateText').textContent = `Fire Rate: ${1000 / selectedTower.fireRate}/s`;
+        const nextLevelStats = document.getElementById('nextLevelStats');
+        if (selectedTower.level < 4) {
+          nextLevelStats.style.display = 'block';
+          let nextDamage = selectedTower.damage;
+          let nextRange = selectedTower.range;
+          let nextFireRate = selectedTower.fireRate;
+          if (selectedTower.type === 'noob') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextRange = 150;
+                break;
+              case 3:
+                nextRange = 175;
+                nextDamage = 2;
+                break;
+              case 4:
+                nextRange = 150;
+                nextFireRate = 500;
+                break;
+            }
+          } else if (selectedTower.type === 'casual') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextFireRate = 500;
+                break;
+              case 3:
+                nextDamage = 4;
+                nextRange = 250;
+                break;
+              case 4:
+                nextDamage = 3;
+                nextFireRate = 333;
+                break;
+            }
+          } else if (selectedTower.type === 'intermediate') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextRange = 150;
+                break;
+              case 3:
+                nextDamage = 2;
+                nextFireRate = 250;
+                break;
+              case 4:
+                nextRange = 200;
+                nextFireRate = 200;
+                break;
+            }
+          } else if (selectedTower.type === 'semipro') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 15;
+                nextRange = 350;
+                break;
+              case 3:
+                nextDamage = 20;
+                nextRange = 400;
+                break;
+              case 4:
+                nextDamage = 30;
+                nextRange = 500;
+                nextFireRate = 1667;
+                break;
+            }
+          } else if (selectedTower.type === 'pro') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 3;
+                nextRange = 350;
+                break;
+              case 3:
+                nextDamage = 4;
+                nextRange = 400;
+                break;
+              case 4:
+                nextDamage = 5;
+                nextRange = 500;
+                nextFireRate = 100;
+                break;
+            }
+          } else if (selectedTower.type === 'bomb') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 8;
+                nextRange = 250;
+                break;
+              case 3:
+                nextDamage = 12;
+                nextRange = 300;
+                break;
+              case 4:
+                nextDamage = 20;
+                nextRange = 350;
+                nextFireRate = 1500;
+                break;
+            }
+          } else if (selectedTower.type === 'ice') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 1;
+                nextRange = 150;
+                break;
+              case 3:
+                nextDamage = 1.5;
+                nextRange = 150;
+                break;
+              case 4:
+                nextDamage = 2;
+                nextRange = 150;
+                break;
+            }
+          } else if (selectedTower.type === 'support') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 0;
+                nextRange = 200;
+                break;
+              case 3:
+                nextDamage = 0;
+                nextRange = 250;
+                break;
+              case 4:
+                nextDamage = 0;
+                nextRange = 300;
+                break;
+            }
+          }
+          document.getElementById('nextDamageText').textContent = `Damage: ${nextDamage}`;
+          document.getElementById('nextRangeText').textContent = `Range: ${nextRange}`;
+          document.getElementById('nextFireRateText').textContent = `Fire Rate: ${1000 / nextFireRate}/s`;
+        } else {
+          nextLevelStats.style.display = 'none';
+        }
+        if (selectedTower.level < 4) {
+          const nextLevelCost = upgradeCosts[selectedTower.type][selectedTower.level + 1];
+          upgradeBtn.textContent = `Upgrade to Level ${selectedTower.level + 1} ($${nextLevelCost})`;
+          upgradeBtn.disabled = gameState.money < nextLevelCost;
+        } else {
+          upgradeBtn.textContent = 'Max Level';
+          upgradeBtn.disabled = true;
+        }
+      }
+    }
+  } else if (!selectedTower) {
+    alert('Please select a tower before upgrading');
+  } else if (selectedTower.level >= 4) {
+    alert('Tower is already at max level');
+  } else if (selectedTower.selectedPaths.length === 0) {
+    alert('Please select at least one upgrade path before upgrading');
+  }
+});
+sellBtn.addEventListener('click', () => {
+  if (selectedTower) {
+    const sellValue = selectedTower.sell();
+    gameState.money += sellValue;
+    gameState.towers = gameState.towers.filter(t => t !== selectedTower);
+    upgradeMenu.style.display = 'none';
+    selectedTower = null;
+  }
+});
+const fasterEnemiesBtn = document.getElementById('fasterEnemiesBtn');
+fasterEnemiesBtn.addEventListener('click', () => {
+  gameState.fasterEnemies = !gameState.fasterEnemies;
+  fasterEnemiesBtn.textContent = `Fast Enemies: ${gameState.fasterEnemies ? 'ON' : 'OFF'}`;
+});
+const strongerEnemiesBtn = document.getElementById('strongerEnemiesBtn');
+strongerEnemiesBtn.addEventListener('click', () => {
+  if (!gameState.strongestEnemies) {
+    gameState.strongerEnemies = !gameState.strongerEnemies;
+    strongerEnemiesBtn.textContent = `Strong Enemies: ${gameState.strongerEnemies ? 'ON' : 'OFF'}`;
+  }
+});
+const strongestEnemiesBtn = document.getElementById('strongestEnemiesBtn');
+strongestEnemiesBtn.addEventListener('click', () => {
+  if (!gameState.strongerEnemies) {
+    gameState.strongestEnemies = !gameState.strongestEnemies;
+    strongestEnemiesBtn.textContent = `Strongest Enemies: ${gameState.strongestEnemies ? 'ON' : 'OFF'}`;
+  }
+});
+const difficultyBtn = document.getElementById('difficultyBtn');
+difficultyBtn.addEventListener('click', () => {
+  if (gameState.difficulty === 1) {
+    gameState.difficulty = 1.5;
+    difficultyBtn.textContent = 'Difficulty: Hard';
+  } else if (gameState.difficulty === 1.5) {
+    gameState.difficulty = 2;
+    difficultyBtn.textContent = 'Difficulty: Expert';
+  } else {
+    gameState.difficulty = 1;
+    difficultyBtn.textContent = 'Difficulty: Normal';
+  }
+});
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    tabBtns.forEach(b => b.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const tabId = btn.getAttribute('data-tab');
+    document.getElementById(`${tabId}Menu`).classList.add('active');
+  });
+});
+const sharpEyesBtn = document.getElementById('sharpEyesBtn');
+sharpEyesBtn.addEventListener('click', () => {
+  gameState.sharpEyes = !gameState.sharpEyes;
+  sharpEyesBtn.textContent = `Sharp Eyes: ${gameState.sharpEyes ? 'ON' : 'OFF'}`;
+});
+const biggerMusclesBtn = document.getElementById('biggerMusclesBtn');
+biggerMusclesBtn.addEventListener('click', () => {
+  gameState.biggerMuscles = !gameState.biggerMuscles;
+  biggerMusclesBtn.textContent = `Bigger Muscles: ${gameState.biggerMuscles ? 'ON' : 'OFF'}`;
+});
+const lazyEnemiesBtn = document.getElementById('lazyEnemiesBtn');
+lazyEnemiesBtn.addEventListener('click', () => {
+  gameState.lazyEnemies = !gameState.lazyEnemies;
+  lazyEnemiesBtn.textContent = `Lazy Enemies: ${gameState.lazyEnemies ? 'ON' : 'OFF'}`;
+});
+const weakerEnemiesBtn = document.getElementById('weakerEnemiesBtn');
+weakerEnemiesBtn.addEventListener('click', () => {
+  gameState.weakerEnemies = !gameState.weakerEnemies;
+  weakerEnemiesBtn.textContent = `Weaker Enemies: ${gameState.weakerEnemies ? 'ON' : 'OFF'}`;
+});
+document.getElementById('extremeBtn').addEventListener('click', () => {
+  document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('selected'));
+  document.getElementById('extremeBtn').classList.add('selected');
+  selectedDifficulty = 'extreme';
+});
+canvas.addEventListener('mousemove', e => {
+  if (gameState.placing) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const onCliff = isOnCliff(x, y);
+    const canPlace = !gameState.towers.some(tower => Math.hypot(x - tower.x, y - tower.y) < 40) && 
+                     !isOnPath(x, y) && 
+                     !isOnTree(x, y) && 
+                     (gameState.selectedTowerType === 'semipro' ? onCliff : !onCliff);
+
+    placementGhost = {
+      x: x,
+      y: y,
+      isValid: canPlace
+    };
+  }
+});
+function isOnPath(x, y) {
+  const path = gameState.path;
+  const A = {
+    x: path[0].x,
+    y: path[0].y
+  };
+  const B = {
+    x: path[1].x,
+    y: path[1].y
+  };
+  const AB = {
+    x: B.x - A.x,
+    y: B.y - A.y
+  };
+  const AP = {
+    x: x - A.x,
+    y: y - A.y
+  };
+  const ab2 = AB.x * AB.x + AB.y * AB.y;
+  const ap_ab = AP.x * AB.x + AP.y * AB.y;
+  const t = Math.max(0, Math.min(1, ap_ab / ab2));
+  const proj = {
+    x: A.x + AB.x * t,
+    y: A.y + AB.y * t
+  };
+  const distance = Math.hypot(x - proj.x, y - proj.y);
+  return distance < 40;
+}
+function isOnTree(x, y) {
+  return trees.some(tree => Math.hypot(x - tree.x, y - tree.y) < 40);
+}
+function isOnCliff(x, y) {
+  return cliffs.some(cliff => Math.hypot(x - cliff.x, y - cliff.y) < cliff.radius);
+}
+function getDifficultyMultiplier() {
+  const multiplier = selectedDifficulty === 'easy' ? 0.75 : selectedDifficulty === 'hard' ? 1.5 : selectedDifficulty === 'extreme' ? 2 : 1;
+  document.querySelector('[data-tower="noob"]').textContent = `Place Noob Tower ($${Math.floor(50 * multiplier)})`;
+  document.querySelector('[data-tower="casual"]').textContent = `Place Casual Tower ($${Math.floor(150 * multiplier)})`;
+  document.querySelector('[data-tower="intermediate"]').textContent = `Place Intermediate Tower ($${Math.floor(250 * multiplier)})`;
+  document.querySelector('[data-tower="semipro"]').textContent = `Place Semi-Pro Tower ($${Math.floor(300 * multiplier)})`;
+  document.querySelector('[data-tower="pro"]').textContent = `Place Pro Tower ($${Math.floor(500 * multiplier)})`;
+  document.querySelector('[data-tower="moneymaker"]').textContent = `Place Money Maker ($${Math.floor(400 * multiplier)})`;
+  document.querySelector('[data-tower="poison"]').textContent = `Place Poison Tower ($${Math.floor(350 * multiplier)})`;
+  document.querySelector('[data-tower="bomb"]').textContent = `Place Bomb Tower ($${Math.floor(600 * multiplier)})`;
+  document.querySelector('[data-tower="ice"]').textContent = `Place Ice Tower ($${Math.floor(450 * multiplier)})`;
+  document.querySelector('[data-tower="support"]').textContent = `Place Support Tower ($${Math.floor(700 * multiplier)})`;
+  return multiplier;
+}
+function getNextTierDownEnemies(currentType) {
+  switch (currentType) {
+    case 'megaboss':
+      return 'boss';
+    case 'boss':
+      return 'tank';
+    case 'tank':
+      return 'normal';
+    case 'fast':
+      return 'normal';
+    case 'normal':
+      return null;
+    default:
+      return null;
+  }
+}
+function gameLoop() {
+  if (mainMenuVisible) {
+    requestAnimationFrame(gameLoop);
+    return;
+  }
+  if (gameState.gameOver) {
+    gameOverElement.style.display = 'block';
+    document.getElementById('retryButton').style.display = 'block';
+    return;
+  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.moveTo(gameState.path[0].x, gameState.path[0].y);
+  ctx.lineTo(gameState.path[1].x, gameState.path[1].y);
+  ctx.strokeStyle = '#b0b0b0';
+  ctx.lineWidth = 40;
+  ctx.stroke();
+  ctx.lineWidth = 1;
+  spawnEnemy();
+  ctx.fillStyle = '#2D5A27';
+  for (const tree of trees) {
+    ctx.beginPath();
+    ctx.arc(tree.x, tree.y, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#3A7A33';
+    ctx.beginPath();
+    ctx.arc(tree.x - 5, tree.y - 5, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2D5A27';
+  }
+  ctx.fillStyle = '#696969';
+  for (const cliff of cliffs) {
+    ctx.beginPath();
+    ctx.arc(cliff.x, cliff.y, cliff.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#404040';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cliff.x, cliff.y, cliff.radius - 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  for (let tower of gameState.towers) {
+    tower.draw();
+    tower.shoot();
+    tower.generateMoney();
+    if (tower.type === 'support') {
+      for (let t of gameState.towers) {
+        if (t !== tower && t.type !== 'support') {
+          const dist = Math.hypot(t.x - tower.x, t.y - tower.y);
+          if (dist <= tower.range) {
+            const origDamage = t.damage / (1 + tower.damageBoost);
+            const origRange = t.range / (1 + tower.rangeBoost);
+            const origFireRate = t.fireRate * (1 + tower.fireRateBoost);
+            
+            t.damage = origDamage * (1 + tower.damageBoost);
+            t.range = origRange * (1 + tower.rangeBoost);
+            t.fireRate = origFireRate / (1 + tower.fireRateBoost);
+          }
+        }
+      }
+    }
+  }
+  gameState.enemies = gameState.enemies.filter(enemy => {
+    enemy.move();
+    enemy.draw();
+    if (enemy.hp <= 0) {
+      gameState.money += 10;
+      if (enemy.type === 'boss') {
+        gameState.money += 100;
+      } else if (enemy.type === 'megaboss') {
+        gameState.money += 250;
+      }
+      const nextTier = getNextTierDownEnemies(enemy.type);
+      if (nextTier) {
+        const spawnCount = enemy.type === 'megaboss' ? 5 : 2;
+        for (let i = 0; i < spawnCount; i++) {
+          const splitEnemy = new Enemy(nextTier);
+          splitEnemy.x = enemy.x;
+          splitEnemy.y = enemy.y + (i - (spawnCount - 1) / 2) * 20;
+          gameState.enemies.push(splitEnemy);
+        }
+      }
+      return false;
+    }
+    if (enemy.x > canvas.width) {
+      gameState.lives -= 1;
+      livesElement.textContent = `Lives: ${gameState.lives}`;
+      if (gameState.lives <= 0) {
+        gameState.gameOver = true;
+      }
+      return false;
+    }
+    if (enemy.poisoned) {
+      const now = Date.now();
+      if (now < enemy.poisonEndTime && now - enemy.lastPoisonTick >= 500) {
+        enemy.hp -= enemy.poisonDamage;
+        enemy.lastPoisonTick = now;
+      } else if (now >= enemy.poisonEndTime) {
+        enemy.poisoned = false;
+      }
+    }
+    if (enemy.frozen) {
+      if (Date.now() >= enemy.frozenEndTime) {
+        enemy.frozen = false;
+      }
+    }
+    return true;
+  });
+  if (gameState.waveComplete && gameState.enemies.length === 0 && !gameState.waveBonusGiven) {
+    const difficultyMultiplier = selectedDifficulty === 'easy' ? 0.75 : selectedDifficulty === 'hard' ? 1.5 : 1;
+    const waveBonus = Math.floor((50 + (gameState.currentWave - 1) * 25) * difficultyMultiplier);
+    gameState.money += waveBonus;
+    gameState.waveBonusGiven = true;
+    const bonusText = document.createElement('div');
+    bonusText.style.position = 'fixed';
+    bonusText.style.top = '50%';
+    bonusText.style.left = '50%';
+    bonusText.style.transform = 'translate(-50%, -50%)';
+    bonusText.style.color = '#4CAF50';
+    bonusText.style.fontSize = '24px';
+    bonusText.style.fontFamily = 'Arial, sans-serif';
+    bonusText.textContent = `Wave ${gameState.currentWave} Completed! Bonus: $${waveBonus}`;
+    document.body.appendChild(bonusText);
+    setTimeout(() => {
+      document.body.removeChild(bonusText);
+    }, 2000);
+    gameState.towers.forEach(tower => {
+      if (tower && tower.type === 'moneymaker' && tower.moneyInterval === 0) {
+        gameState.money += tower.moneyPerRound;
+      }
+    });
+  }
+  if (!gameState.waveComplete) {
+    gameState.waveBonusGiven = false;
+  }
+  const multiplier = getDifficultyMultiplier();
+  document.querySelector('[data-tower="noob"]').textContent = `Place Noob Tower ($${Math.floor(50 * multiplier)})`;
+  document.querySelector('[data-tower="casual"]').textContent = `Place Casual Tower ($${Math.floor(150 * multiplier)})`;
+  document.querySelector('[data-tower="intermediate"]').textContent = `Place Intermediate Tower ($${Math.floor(250 * multiplier)})`;
+  document.querySelector('[data-tower="semipro"]').textContent = `Place Semi-Pro Tower ($${Math.floor(300 * multiplier)})`;
+  document.querySelector('[data-tower="pro"]').textContent = `Place Pro Tower ($${Math.floor(500 * multiplier)})`;
+  document.querySelector('[data-tower="moneymaker"]').textContent = `Place Money Maker ($${Math.floor(400 * multiplier)})`;
+  document.querySelector('[data-tower="poison"]').textContent = `Place Poison Tower ($${Math.floor(350 * multiplier)})`;
+  document.querySelector('[data-tower="bomb"]').textContent = `Place Bomb Tower ($${Math.floor(600 * multiplier)})`;
+  document.querySelector('[data-tower="ice"]').textContent = `Place Ice Tower ($${Math.floor(450 * multiplier)})`;
+  document.querySelector('[data-tower="support"]').textContent = `Place Support Tower ($${Math.floor(700 * multiplier)})`;
+  document.getElementById('money').textContent = `Money: $${gameState.money}`;
+  document.getElementById('maxWaves').textContent = inFreeplay ? `Wave: ${gameState.currentWave} (Freeplay)` : `Wave: ${gameState.currentWave}/${maxWaves}`;
+  if (gameState.placing && placementGhost) {
+    ctx.beginPath();
+    ctx.arc(placementGhost.x, placementGhost.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = placementGhost.isValid ? 'rgba(74, 74, 74, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+    ctx.fill();
+
+    const ghostRange = gameState.sharpEyes ? 100 * 1.5 : 100;
+    ctx.beginPath();
+    ctx.arc(placementGhost.x, placementGhost.y, ghostRange, 0, Math.PI * 2);
+    ctx.strokeStyle = placementGhost.isValid ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)';
+    ctx.stroke();
+  }
+  if (!inFreeplay && gameState.currentWave > maxWaves) {
+    const freeplayPrompt = document.getElementById('freeplayPrompt');
+    freeplayPrompt.style.display = 'block';
+    gameState.gameStarted = false;
+  }
+  document.getElementById('creditsBtn').addEventListener('click', showCredits);
+  document.querySelector('#creditsScreen .close-btn').addEventListener('click', hideCredits);
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+document.getElementById('startGameBtn').addEventListener('click', hideMainMenu);
+document.getElementById('howToPlayBtn').addEventListener('click', showHowToPlay);
+document.getElementById('easyBtn').addEventListener('click', () => {
+  document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('selected'));
+  document.getElementById('easyBtn').classList.add('selected');
+  selectedDifficulty = 'easy';
+});
+document.getElementById('normalBtn').addEventListener('click', () => {
+  document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('selected'));
+  document.getElementById('normalBtn').classList.add('selected');
+  selectedDifficulty = 'normal';
+});
+document.getElementById('hardBtn').addEventListener('click', () => {
+  document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('selected'));
+  document.getElementById('hardBtn').classList.add('selected');
+  selectedDifficulty = 'hard';
+});
+document.getElementById('normalBtn').classList.add('selected');
+document.getElementById('playBtn').addEventListener('click', () => {
+  document.getElementById('playBtn').style.display = 'none';
+  document.getElementById('mapSelection').style.display = 'flex';
+});
+const unselectButton = document.getElementById('unselectButton');
+unselectButton.addEventListener('click', () => {
+  gameState.placing = false;
+  placementGhost = null;
+  unselectButton.style.display = 'none';
+});
+document.getElementById('grasslandBtn').addEventListener('click', () => {
+  document.getElementById('mapSelection').style.display = 'none';
+  document.getElementById('difficultySelect').style.display = 'flex';
+});
+document.getElementById('confirmMapBtn').addEventListener('click', () => {
+  document.getElementById('mapSelection').style.display = 'none';
+  document.getElementById('difficultySelect').style.display = 'flex';
+});
+document.getElementById('startFreeplayBtn').addEventListener('click', () => {
+  inFreeplay = true;
+  document.getElementById('freeplayPrompt').style.display = 'none';
+  gameState.gameStarted = true;
+});
+document.getElementById('endGameBtn').addEventListener('click', () => {
+  document.getElementById('freeplayPrompt').style.display = 'none';
+  document.getElementById('victoryScreen').style.display = 'block';
+  gameState.gameOver = true;
+});
+upgradeBtn.addEventListener('click', () => {
+  if (selectedTower && selectedTower.selectedPaths.length > 0 && selectedTower.level < 4) {
+    const upgradeCosts = {
+      'noob': [null, 50, 100, 200],
+      'casual': [null, 200, 300, 400],
+      'intermediate': [null, 350, 500, 750],
+      'semipro': [null, 350, 500, 1000],
+      'pro': [null, 400, 600, 1200],
+      'moneymaker': [null, 500, 750, 1000],
+      'poison': [null, 400, 600, 800],
+      'bomb': [null, 500, 750, 1000],
+      'ice': [null, 400, 600, 800],
+      'support': [null, 500, 750, 1000]
+    };
+    const upgradeCost = upgradeCosts[selectedTower.type][selectedTower.level];
+    if (gameState.money >= upgradeCost) {
+      gameState.money -= upgradeCost;
+      selectedTower.upgrade();
+      if (selectedTower) {
+        document.getElementById('damageText').textContent = `Damage: ${selectedTower.damage}`;
+        document.getElementById('rangeText').textContent = `Range: ${selectedTower.range}`;
+        document.getElementById('fireRateText').textContent = `Fire Rate: ${1000 / selectedTower.fireRate}/s`;
+        const nextLevelStats = document.getElementById('nextLevelStats');
+        if (selectedTower.level < 4) {
+          nextLevelStats.style.display = 'block';
+          let nextDamage = selectedTower.damage;
+          let nextRange = selectedTower.range;
+          let nextFireRate = selectedTower.fireRate;
+          if (selectedTower.type === 'noob') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextRange = 150;
+                break;
+              case 3:
+                nextRange = 175;
+                nextDamage = 2;
+                break;
+              case 4:
+                nextRange = 150;
+                nextFireRate = 500;
+                break;
+            }
+          } else if (selectedTower.type === 'casual') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextFireRate = 500;
+                break;
+              case 3:
+                nextDamage = 4;
+                nextRange = 250;
+                break;
+              case 4:
+                nextDamage = 3;
+                nextFireRate = 333;
+                break;
+            }
+          } else if (selectedTower.type === 'intermediate') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextRange = 150;
+                break;
+              case 3:
+                nextDamage = 2;
+                nextFireRate = 250;
+                break;
+              case 4:
+                nextRange = 200;
+                nextFireRate = 200;
+                break;
+            }
+          } else if (selectedTower.type === 'semipro') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 15;
+                nextRange = 350;
+                break;
+              case 3:
+                nextDamage = 20;
+                nextRange = 400;
+                break;
+              case 4:
+                nextDamage = 30;
+                nextRange = 500;
+                nextFireRate = 1667;
+                break;
+            }
+          } else if (selectedTower.type === 'pro') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 3;
+                nextRange = 350;
+                break;
+              case 3:
+                nextDamage = 4;
+                nextRange = 400;
+                break;
+              case 4:
+                nextDamage = 5;
+                nextRange = 500;
+                nextFireRate = 100;
+                break;
+            }
+          } else if (selectedTower.type === 'bomb') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 8;
+                nextRange = 250;
+                break;
+              case 3:
+                nextDamage = 12;
+                nextRange = 300;
+                break;
+              case 4:
+                nextDamage = 20;
+                nextRange = 350;
+                nextFireRate = 1500;
+                break;
+            }
+          } else if (selectedTower.type === 'ice') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 1;
+                nextRange = 150;
+                break;
+              case 3:
+                nextDamage = 1.5;
+                nextRange = 150;
+                break;
+              case 4:
+                nextDamage = 2;
+                nextRange = 150;
+                break;
+            }
+          } else if (selectedTower.type === 'support') {
+            switch (selectedTower.level + 1) {
+              case 2:
+                nextDamage = 0;
+                nextRange = 200;
+                break;
+              case 3:
+                nextDamage = 0;
+                nextRange = 250;
+                break;
+              case 4:
+                nextDamage = 0;
+                nextRange = 300;
+                break;
+            }
+          }
+          document.getElementById('nextDamageText').textContent = `Damage: ${nextDamage}`;
+          document.getElementById('nextRangeText').textContent = `Range: ${nextRange}`;
+          document.getElementById('nextFireRateText').textContent = `Fire Rate: ${1000 / nextFireRate}/s`;
+        } else {
+          nextLevelStats.style.display = 'none';
+        }
+        if (selectedTower.level < 4) {
+          const nextLevelCost = upgradeCosts[selectedTower.type][selectedTower.level + 1];
+          upgradeBtn.textContent = `Upgrade to Level ${selectedTower.level + 1} ($${nextLevelCost})`;
+          upgradeBtn.disabled = gameState.money < nextLevelCost;
+        } else {
+          upgradeBtn.textContent = 'Max Level';
+          upgradeBtn.disabled = true;
+        }
+      }
+    }
+  } else if (!selectedTower) {
+    alert('Please select a tower before upgrading');
+  } else if (selectedTower.level >= 4) {
+    alert('Tower is already at max level');
+  } else if (selectedTower.selectedPaths.length === 0) {
+    alert('Please select at least one upgrade path before upgrading');
+  }
+});
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  if (gameState.placing && !gameState.gameOver) {
+    const onCliff = isOnCliff(x, y);
+    const canPlace = !gameState.towers.some(tower => Math.hypot(x - tower.x, y - tower.y) < 40) && 
+                     !isOnPath(x, y) && 
+                     !isOnTree(x, y) && 
+                     (gameState.selectedTowerType === 'semipro' ? onCliff : !onCliff);
+
+    if (canPlace) {
+      const baseCosts = {
+        'noob': 50,
+        'casual': 150,
+        'intermediate': 250,
+        'semipro': 300,
+        'pro': 500,
+        'moneymaker': 400,
+        'poison': 350,
+        'bomb': 600,
+        'ice': 450,
+        'support': 700
+      };
+      const cost = Math.floor(baseCosts[gameState.selectedTowerType] * getDifficultyMultiplier());
+      if (gameState.money >= cost) {
+        gameState.towers.push(new Tower(x, y, gameState.selectedTowerType));
+        gameState.money -= cost;
+        gameState.placing = false;
+        placementGhost = null;
+        unselectButton.style.display = 'none';
+      }
+    }
+  } else {
+    selectedTower = gameState.towers.find(tower => Math.hypot(x - tower.x, y - tower.y) < 20);
+    if (!selectedTower) {
+      upgradeMenu.style.display = 'none';
+      return;
+    }
+    upgradeMenu.style.display = 'block';
+    upgradeMenu.style.left = `${e.clientX}px`;
+    upgradeMenu.style.top = `${e.clientY}px`;
+    if (selectedTower.level < 4) {
+      const upgradeCosts = {
+        'noob': [null, 50, 100, 200],
+        'casual': [null, 200, 300, 400],
+        'intermediate': [null, 350, 500, 750],
+        'semipro': [null, 350, 500, 1000],
+        'pro': [null, 400, 600, 1200],
+        'moneymaker': [null, 500, 750, 1000],
+        'poison': [null, 400, 600, 800],
+        'bomb': [null, 500, 750, 1000],
+        'ice': [null, 400, 600, 800],
+        'support': [null, 500, 750, 1000]
+      };
+      const nextLevelCost = upgradeCosts[selectedTower.type][selectedTower.level];
+      upgradeBtn.textContent = `Upgrade to Level ${selectedTower.level + 1} ($${nextLevelCost})`;
+      upgradeBtn.disabled = gameState.money < nextLevelCost;
+    } else {
+      upgradeBtn.textContent = 'Max Level';
+      upgradeBtn.disabled = true;
+    }
+    sellBtn.textContent = `Sell Tower ($${selectedTower.sell()})`;
+    if (selectedTower.type === 'moneymaker') {
+      document.getElementById('damageText').textContent = 'Money per round: ' + selectedTower.moneyPerRound;
+      document.getElementById('rangeText').textContent = 'Money interval: ' + (selectedTower.moneyInterval ? selectedTower.moneyInterval / 1000 + 's' : 'End of round');
+      document.getElementById('fireRateText').textContent = '';
+      if (selectedTower.level < 4) {
+        let nextMoneyPerRound = selectedTower.moneyPerRound;
+        let nextMoneyInterval = selectedTower.moneyInterval;
+        switch (selectedTower.level + 1) {
+          case 2:
+            nextMoneyPerRound = 150;
+            nextMoneyInterval = 20000;
+            break;
+          case 3:
+            nextMoneyPerRound = 200;
+            nextMoneyInterval = 15000;
+            break;
+          case 4:
+            nextMoneyPerRound = 300;
+            nextMoneyInterval = 10000;
+            break;
+        }
+        document.getElementById('nextDamageText').textContent = 'Money per round: ' + nextMoneyPerRound;
+        document.getElementById('nextRangeText').textContent = 'Money interval: ' + (nextMoneyInterval ? nextMoneyInterval / 1000 + 's' : 'End of round');
+        document.getElementById('nextFireRateText').textContent = '';
+      }
+    } else {
+      document.getElementById('damageText').textContent = `Damage: ${selectedTower.damage}`;
+      document.getElementById('rangeText').textContent = `Range: ${selectedTower.range}`;
+      document.getElementById('fireRateText').textContent = `Fire Rate: ${1000 / selectedTower.fireRate}/s`;
+      if (selectedTower.level < 4) {
+        let nextDamage = selectedTower.damage;
+        let nextRange = selectedTower.range;
+        let nextFireRate = selectedTower.fireRate;
+        if (selectedTower.type === 'noob') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextRange = 150;
+              break;
+            case 3:
+              nextRange = 175;
+              nextDamage = 2;
+              break;
+            case 4:
+              nextRange = 150;
+              nextFireRate = 500;
+              break;
+          }
+        } else if (selectedTower.type === 'casual') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextFireRate = 500;
+              break;
+            case 3:
+              nextDamage = 4;
+              nextRange = 250;
+              break;
+            case 4:
+              nextDamage = 3;
+              nextFireRate = 333;
+              break;
+          }
+        } else if (selectedTower.type === 'intermediate') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextRange = 150;
+              break;
+            case 3:
+              nextDamage = 2;
+              nextFireRate = 250;
+              break;
+            case 4:
+              nextRange = 200;
+              nextFireRate = 200;
+              break;
+          }
+        } else if (selectedTower.type === 'semipro') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 15;
+              nextRange = 350;
+              break;
+            case 3:
+              nextDamage = 20;
+              nextRange = 400;
+              break;
+            case 4:
+              nextDamage = 30;
+              nextRange = 500;
+              nextFireRate = 1667;
+              break;
+          }
+        } else if (selectedTower.type === 'pro') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 3;
+              nextRange = 350;
+              break;
+            case 3:
+              nextDamage = 4;
+              nextRange = 400;
+              break;
+            case 4:
+              nextDamage = 5;
+              nextRange = 500;
+              nextFireRate = 100;
+              break;
+          }
+        } else if (selectedTower.type === 'bomb') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 8;
+              nextRange = 250;
+              break;
+            case 3:
+              nextDamage = 12;
+              nextRange = 300;
+              break;
+            case 4:
+              nextDamage = 20;
+              nextRange = 350;
+              nextFireRate = 1500;
+              break;
+          }
+        } else if (selectedTower.type === 'ice') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 1;
+              nextRange = 150;
+              break;
+            case 3:
+              nextDamage = 1.5;
+              nextRange = 150;
+              break;
+            case 4:
+              nextDamage = 2;
+              nextRange = 150;
+              break;
+          }
+        } else if (selectedTower.type === 'support') {
+          switch (selectedTower.level + 1) {
+            case 2:
+              nextDamage = 0;
+              nextRange = 200;
+              break;
+            case 3:
+              nextDamage = 0;
+              nextRange = 250;
+              break;
+            case 4:
+              nextDamage = 0;
+              nextRange = 300;
+              break;
+          }
+        }
+        document.getElementById('nextDamageText').textContent = `Damage: ${nextDamage}`;
+        document.getElementById('nextRangeText').textContent = `Range: ${nextRange}`;
+        document.getElementById('nextFireRateText').textContent = `Fire Rate: ${1000 / nextFireRate}/s`;
+      }
+    }
+    const nextLevelStats = document.getElementById('nextLevelStats');
+    if (selectedTower.level < 4) {
+      nextLevelStats.style.display = 'block';
+    } else {
+      nextLevelStats.style.display = 'none';
+    }
+    if (selectedTower) {
+      const pathButtons = document.querySelectorAll('.path-btn');
+      pathButtons.forEach(btn => {
+        const pathNum = parseInt(btn.dataset.path);
+        const pathName = selectedTower.getPathName(pathNum);
+        btn.innerHTML = `<p class="path-name">${pathName}</p>Path ${pathNum}`;
+        btn.classList.remove('selected');
+        btn.classList.remove('disabled');
+        if (selectedTower.selectedPaths.includes(pathNum)) {
+          btn.classList.add('selected');
+        } else if (selectedTower.selectedPaths.length >= selectedTower.maxPaths) {
+          btn.classList.add('disabled');
+        }
+        btn.onclick = () => {
+          if (!btn.classList.contains('disabled')) {
+            if (selectedTower.selectPath(pathNum)) {
+              btn.classList.add('selected');
+              if (selectedTower.selectedPaths.length >= selectedTower.maxPaths) {
+                pathButtons.forEach(b => {
+                  if (!b.classList.contains('selected')) {
+                    b.classList.add('disabled');
+                  }
+                });
+              }
+            }
+          }
+        };
+      });
+    }
+  }
+});
+document.getElementById('towerSelection').addEventListener('click', e => {
+  if (e.target.classList.contains('tower-select-btn')) {
+    const towerType = e.target.dataset.tower;
+    const baseCosts = {
+      'noob': 50,
+      'casual': 150,
+      'intermediate': 250,
+      'semipro': 300,
+      'pro': 500,
+      'moneymaker': 400,
+      'poison': 350,
+      'bomb': 600,
+      'ice': 450,
+      'support': 700
+    };
+    const cost = Math.floor(baseCosts[towerType] * getDifficultyMultiplier());
+    if (gameState.money >= cost && !gameState.gameOver && !gameState.placing) {
+      gameState.selectedTowerType = towerType;
+      gameState.placing = true;
+      placementGhost = null;
+      unselectButton.style.display = 'block';
+    }
+  }
+});
+document.getElementById('circleButton').addEventListener('click', () => {
+  window.open('https://sites.google.com/view/mylamagames/', '_blank');
+});
+</script>
+</body>
+</html>

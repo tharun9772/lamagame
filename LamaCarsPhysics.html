@@ -1,0 +1,1157 @@
+<html><head><base href="https://example.com/" />
+    <title>Lama Cars: Physics</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #87ceeb;
+      }
+      #instructions {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-family: Arial, sans-serif;
+        z-index: 1;
+      }
+      #speedometer {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        box-shadow: inset 0 0 10px #000;
+        z-index: 1;
+        transition: background 0.2s;
+      }
+      #needle {
+        position: absolute;
+        width: 4px;
+        height: 70px;
+        background: white;
+        top: 5px;
+        left: 73px;
+        transform-origin: bottom center;
+      }
+      #speed-text {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        bottom: 20px;
+        left: 0;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+      }
+      #acceleration-text {
+        position: absolute;
+        bottom: 60px;
+        left: 20px;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+      }
+      #distance-text {
+        position: absolute;
+        bottom: 40px;
+        left: 20px;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+      }
+      #bonus-ui {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+        z-index: 2;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+      #bonus-ui button {
+        margin-top: 15px;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #ff0000;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #bonus-ui button:hover {
+        background-color: #cc0000;
+      }
+      /* Crash Flash Effect */
+      #crash-flash {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 0, 0, 0.5);
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+        z-index: 3;
+      }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+      <h1>Lama Cars: Physics</h1>
+      <p>
+        Use <strong>Arrow Keys</strong> or <strong>WASD</strong> to drive your car with realistic
+        physics!
+      </p>
+      <p>Press <strong>F</strong> to flip your car if it gets stuck.</p>
+      <p>Hold <strong>Down Arrow</strong> or <strong>S</strong> when stopped to reverse.</p>
+      <p>
+        Pick up the <strong>yellow orbs</strong> to increase your acceleration!
+      </p>
+    </div>
+    <div id="speedometer">
+      <div id="needle"></div>
+      <div id="speed-text">0 km/h</div>
+    </div>
+    <div id="acceleration-text">Acceleration: 1</div>
+    <div id="distance-text">Distance: 0 m</div>
+    <div id="bonus-ui">
+      <p>Code: <strong>UWE82Y1</strong></p>
+      <button id="hide-ui">X</button>
+    </div>
+    <div id="crash-flash"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script>
+      // Initialize scene, camera, and renderer
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87ceeb); // Sky blue
+
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        10000
+      );
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Initialize Cannon.js physics world
+      const world = new CANNON.World();
+      world.gravity.set(0, -9.82, 0);
+      world.broadphase = new CANNON.NaiveBroadphase();
+      world.solver.iterations = 10;
+
+      // Physics material
+      const groundMaterial = new CANNON.Material("groundMaterial");
+      const wheelMaterial = new CANNON.Material("wheelMaterial");
+      const wheelGroundContactMaterial = new CANNON.ContactMaterial(
+        wheelMaterial,
+        groundMaterial,
+        {
+          friction: 0.3,
+          restitution: 0,
+          contactEquationStiffness: 1000,
+        }
+      );
+      world.addContactMaterial(wheelGroundContactMaterial);
+
+      // Create procedurally generated grass texture
+      function createGrassTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 64;
+        const context = canvas.getContext("2d");
+
+        // Draw grass pattern on the canvas
+        context.fillStyle = "#228B22"; // ForestGreen color
+        context.fillRect(0, 0, 64, 64);
+        for (let i = 0; i < 1000; i++) {
+          context.fillStyle = `rgba(50,163,21,${Math.random()})`;
+          context.fillRect(
+            Math.random() * 64,
+            Math.random() * 64,
+            1 + Math.random() * 1,
+            Math.random() * 1
+          );
+        }
+
+        const grassTexture = new THREE.CanvasTexture(canvas);
+        grassTexture.wrapS = grassTexture.wrapT = THREE.RepeatWrapping;
+        grassTexture.repeat.set(256, 256);
+        grassTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        grassTexture.minFilter = THREE.LinearMipMapLinearFilter;
+        grassTexture.magFilter = THREE.LinearFilter;
+
+        return grassTexture;
+      }
+
+      const grassTexture = createGrassTexture();
+
+      // Ground tiles management
+      const tileSize = 500;
+      const tiles = {};
+      const maxTilesDistance = 2000;
+
+      function getTileKey(x, z) {
+        const tileX = Math.floor(x / tileSize);
+        const tileZ = Math.floor(z / tileSize);
+        return `${tileX}_${tileZ}`;
+      }
+
+      function createTile(x, z) {
+        const key = getTileKey(x, z);
+        if (tiles[key]) return;
+
+        // Visual ground
+        const groundGeometry = new THREE.PlaneGeometry(tileSize, tileSize);
+        const groundMaterialVisual = new THREE.MeshPhongMaterial({
+          map: grassTexture,
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterialVisual);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set(x, 0, z);
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Ground physics body
+        const groundBody = new CANNON.Body({
+          mass: 0,
+          material: groundMaterial,
+        });
+        const groundShape = new CANNON.Plane();
+        groundBody.addShape(groundShape);
+        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+        groundBody.position.set(x, 0, z);
+        world.addBody(groundBody);
+
+        tiles[key] = { ground, groundBody, objects: [] };
+        addObjectsToTile(x, z);
+      }
+
+      function removeTile(key) {
+        const tile = tiles[key];
+        if (tile) {
+          scene.remove(tile.ground);
+          world.removeBody(tile.groundBody);
+
+          // Remove all objects associated with the tile
+          tile.objects.forEach(({ object, body }) => {
+            scene.remove(object);
+            if (body) {
+              world.removeBody(body);
+            }
+          });
+
+          delete tiles[key];
+        }
+      }
+
+      // Trees, ramps, boosts, and clouds management
+      function addObjectsToTile(x, z) {
+        const distanceFromOrigin = Math.hypot(
+          chassisBody.position.x,
+          chassisBody.position.z
+        );
+        const distanceFactor = Math.max(1, distanceFromOrigin / 1000);
+
+        const numTrees = 10;
+        for (let i = 0; i < numTrees; i++) {
+          const posX = x - tileSize / 2 + Math.random() * tileSize;
+          const posZ = z - tileSize / 2 + Math.random() * tileSize;
+
+          // Avoid placing trees on the road
+          if (Math.abs(posZ) < 10) continue;
+
+          const tree = new THREE.Group();
+
+          const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 5);
+          const trunkMaterial = new THREE.MeshPhongMaterial({
+            color: 0x8b4513,
+          }); // Brown color
+          const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+          trunk.position.y = 2.5;
+          trunk.castShadow = true;
+          tree.add(trunk);
+
+          const leavesGeometry = new THREE.ConeGeometry(2, 5, 8);
+          const leavesMaterial = new THREE.MeshPhongMaterial({
+            color: 0x006400,
+          }); // Dark green color
+          const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+          leaves.position.y = 7.5;
+          leaves.castShadow = true;
+          tree.add(leaves);
+
+          tree.position.set(posX, 0, posZ);
+
+          scene.add(tree);
+
+          // Physics body for the tree (approximate as a cylinder)
+          const treeShape = new CANNON.Cylinder(0.5, 0.5, 5, 8);
+          const treeBody = new CANNON.Body({ mass: 0 });
+          treeBody.addShape(treeShape);
+          treeBody.position.set(posX, 0, posZ);
+          world.addBody(treeBody);
+
+          tiles[getTileKey(x, z)].objects.push({
+            object: tree,
+            body: treeBody,
+          });
+        }
+
+        const numRamps = 2;
+        for (let i = 0; i < numRamps; i++) {
+          const posX = x - tileSize / 2 + Math.random() * tileSize;
+          const posZ = z - tileSize / 2 + Math.random() * tileSize;
+          const rotationY = Math.random() * Math.PI * 2;
+
+          // Avoid placing ramps on the road
+          if (Math.abs(posZ) < 10) continue;
+
+          const ramp = createRamp(posX, 0.5, posZ, -Math.PI / 18, rotationY, 0);
+
+          tiles[getTileKey(x, z)].objects.push({
+            object: ramp,
+            body: ramp.userData.physicsBody,
+          });
+        }
+
+        const numBoosts = 20;
+        for (let i = 0; i < numBoosts; i++) {
+          const posX = x - tileSize / 2 + Math.random() * tileSize;
+          const posZ = z - tileSize / 2 + Math.random() * tileSize;
+
+          // Avoid placing boosts on the road
+          if (Math.abs(posZ) < 10) continue;
+
+          const boost = createBoost(posX, 1, posZ);
+
+          tiles[getTileKey(x, z)].objects.push({
+            object: boost,
+            body: null, // boosts don't have physics bodies
+          });
+        }
+
+        // Add clouds
+        const numClouds = 2;
+        for (let i = 0; i < numClouds; i++) {
+          const posX = x - tileSize / 2 + Math.random() * tileSize;
+          const posY = 100 + Math.random() * 50; // Clouds are high in the sky
+          const posZ = z - tileSize / 2 + Math.random() * tileSize;
+
+          const cloud = createCloud(posX, posY, posZ);
+
+          tiles[getTileKey(x, z)].objects.push({
+            object: cloud,
+            body: null, // Clouds don't need physics body
+          });
+        }
+      }
+
+      // Function to create ramps
+      function createRamp(posX, posY, posZ, rotationX, rotationY, rotationZ) {
+        const rampGeometry = new THREE.BoxGeometry(20, 1, 50);
+        const rampMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 });
+        const ramp = new THREE.Mesh(rampGeometry, rampMaterial);
+        ramp.castShadow = true;
+        ramp.receiveShadow = true;
+        ramp.rotation.set(rotationX, rotationY, rotationZ);
+        ramp.position.set(posX, posY, posZ);
+        scene.add(ramp);
+
+        // Physics body for ramp
+        const rampShape = new CANNON.Box(new CANNON.Vec3(10, 0.5, 25));
+        const rampBody = new CANNON.Body({ mass: 0 });
+        rampBody.addShape(rampShape);
+        rampBody.position.set(posX, posY, posZ);
+        rampBody.quaternion.setFromEuler(rotationX, rotationY, rotationZ);
+        world.addBody(rampBody);
+
+        // Store a reference to the physics body in the ramp mesh
+        ramp.userData.physicsBody = rampBody;
+
+        return ramp;
+      }
+
+      // Road management
+      const roadSegments = {};
+      const roadLength = 1000;
+
+      function createRoadSegment(index) {
+        if (roadSegments[index]) return;
+
+        // Create road texture
+        function createRoadTexture() {
+          const roadCanvas = document.createElement("canvas");
+          roadCanvas.width = roadCanvas.height = 64;
+          const ctx = roadCanvas.getContext("2d");
+
+          ctx.fillStyle = "#696969";
+          ctx.fillRect(0, 0, 64, 64);
+
+          ctx.strokeStyle = "#FFFFFF";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 10]);
+          ctx.beginPath();
+          ctx.moveTo(0, 32);
+          ctx.lineTo(64, 32);
+          ctx.stroke();
+
+          const roadTexture = new THREE.CanvasTexture(roadCanvas);
+          roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
+          roadTexture.repeat.set(100, 1);
+          roadTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+          roadTexture.minFilter = THREE.LinearMipMapLinearFilter;
+          roadTexture.magFilter = THREE.LinearFilter;
+
+          return roadTexture;
+        }
+
+        const roadTexture = createRoadTexture();
+
+        const roadGeometry = new THREE.PlaneGeometry(roadLength, 20);
+        const roadMaterialVisual = new THREE.MeshPhongMaterial({
+          map: roadTexture,
+        });
+        const road = new THREE.Mesh(roadGeometry, roadMaterialVisual);
+        road.rotation.x = -Math.PI / 2;
+        road.position.set(index * roadLength, 0.02, 0);
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Road physics body
+        const roadBody = new CANNON.Body({
+          mass: 0,
+          material: groundMaterial,
+        });
+        const roadShape = new CANNON.Box(
+          new CANNON.Vec3(roadLength / 2, 0.1, 10)
+        );
+        roadBody.addShape(roadShape);
+        road.position.set(index * roadLength, 0.02, 0);
+        world.addBody(roadBody);
+
+        roadSegments[index] = { road, roadBody };
+
+        // Place boosts on the road segment
+        const numBoosts = 2;
+        for (let i = 0; i < numBoosts; i++) {
+          const posX =
+            index * roadLength + (Math.random() * roadLength - roadLength / 2);
+          const posZ = (Math.random() - 0.5) * 10; // Road width is 20 units, so -10 to 10
+          createBoost(posX, 1, posZ);
+        }
+      }
+
+      function removeRoadSegment(index) {
+        const segment = roadSegments[index];
+        if (segment) {
+          scene.remove(segment.road);
+          world.removeBody(segment.roadBody);
+          delete roadSegments[index];
+        }
+      }
+
+      // Function to create boosts
+      const boosts = [];
+
+      function createBoost(x, y, z) {
+        const boostGeometry = new THREE.SphereGeometry(1, 16, 16); // Increased size
+        const boostMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffff00,
+          emissive: 0xffff00,
+        });
+        const boost = new THREE.Mesh(boostGeometry, boostMaterial);
+        boost.position.set(x, y, z);
+        boost.castShadow = true;
+        scene.add(boost);
+        boosts.push(boost);
+
+        // No physics body needed
+        return boost;
+      }
+
+      // Function to create clouds
+      function createCloud(x, y, z) {
+        const cloud = new THREE.Group();
+
+        const cloudMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8,
+        });
+
+        const numParticles = 5 + Math.floor(Math.random() * 5);
+
+        for (let i = 0; i < numParticles; i++) {
+          const geometry = new THREE.SphereGeometry(
+            Math.random() * 5 + 5,
+            16,
+            16
+          );
+          const mesh = new THREE.Mesh(geometry, cloudMaterial);
+          mesh.position.set(
+            Math.random() * 10 - 5,
+            Math.random() * 5,
+            Math.random() * 10 - 5
+          );
+          cloud.add(mesh);
+        }
+
+        cloud.position.set(x, y, z);
+        scene.add(cloud);
+
+        return cloud;
+      }
+
+      // Car chassis
+      const chassisShape = new CANNON.Box(new CANNON.Vec3(1, 0.25, 2));
+      const chassisBody = new CANNON.Body({ mass: 300 });
+      chassisBody.addShape(chassisShape);
+      chassisBody.position.set(0, 1, 0);
+      chassisBody.angularVelocity.set(0, 0, 0);
+      chassisBody.angularDamping = 0.9; // Increased from 0.5
+      chassisBody.linearDamping = 0.0; // Reduced from 0.1
+
+      // Car visual
+      const carMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+      const carGeometry = new THREE.BoxGeometry(2, 0.5, 4);
+      const carMesh = new THREE.Mesh(carGeometry, carMaterial);
+      carMesh.castShadow = true;
+      scene.add(carMesh);
+
+      // Raycast Vehicle
+      const vehicle = new CANNON.RaycastVehicle({
+        chassisBody: chassisBody,
+        indexRightAxis: 0,
+        indexUpAxis: 1,
+        indexForwardAxis: 2,
+      });
+
+      // Updated vehicle suspension options
+      const options = {
+        radius: 0.4,
+        directionLocal: new CANNON.Vec3(0, -1, 0),
+        suspensionStiffness: 80, // Increased from 45
+        suspensionRestLength: 0.4,
+        frictionSlip: 5,
+        dampingRelaxation: 5.5, // Increased from 3.5
+        dampingCompression: 6.4, // Increased from 4.4
+        maxSuspensionForce: 500000, // Increased from 200000
+        rollInfluence: 0.01, // Reduced from 0.01
+        axleLocal: new CANNON.Vec3(-1, 0, 0),
+        chassisConnectionPointLocal: new CANNON.Vec3(),
+        maxSuspensionTravel: 0.4,
+        customSlidingRotationalSpeed: -30,
+        useCustomSlidingRotationalSpeed: true,
+      };
+
+      // Add wheels
+      const wheelPositions = [
+        new CANNON.Vec3(-0.9, 0, 1.5), // Front left
+        new CANNON.Vec3(0.9, 0, 1.5), // Front right
+        new CANNON.Vec3(-0.9, 0, -1.5), // Back left
+        new CANNON.Vec3(0.9, 0, -1.5), // Back right
+      ];
+
+      wheelPositions.forEach((position, index) => {
+        options.chassisConnectionPointLocal.copy(position);
+        options.isFrontWheel = index < 2 ? true : false;
+        vehicle.addWheel(options);
+      });
+
+      vehicle.addToWorld(world);
+
+      chassisBody.quaternion.setFromAxisAngle(
+        new CANNON.Vec3(0, 1, 0),
+        Math.PI / 2
+      );
+
+      // Wheel visuals
+      const wheelMaterialVisual = new THREE.MeshPhongMaterial({
+        color: 0x000000,
+      });
+      const wheelGeometry = new THREE.CylinderGeometry(
+        options.radius,
+        options.radius,
+        0.2,
+        16
+      );
+      const wheelVisuals = [];
+
+      vehicle.wheelInfos.forEach((wheel) => {
+        const wheelMesh = new THREE.Mesh(wheelGeometry, wheelMaterialVisual);
+        wheelMesh.rotation.z = Math.PI / 2;
+        wheelMesh.castShadow = true;
+        scene.add(wheelMesh);
+        wheelVisuals.push(wheelMesh);
+      });
+
+      // Sync wheels
+      world.addEventListener("postStep", function () {
+        for (let i = 0; i < vehicle.wheelInfos.length; i++) {
+          vehicle.updateWheelTransform(i);
+          const t = vehicle.wheelInfos[i].worldTransform;
+          const wheel = wheelVisuals[i];
+
+          wheel.position.copy(t.position);
+          wheel.quaternion.copy(t.quaternion);
+        }
+      });
+
+      // Add light
+      const ambientLight = new THREE.AmbientLight(0xcccccc);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(100, 100, 100);
+      directionalLight.castShadow = true;
+
+      directionalLight.shadow.camera.left = -100;
+      directionalLight.shadow.camera.right = 100;
+      directionalLight.shadow.camera.top = 100;
+      directionalLight.shadow.camera.bottom = -100;
+
+      directionalLight.shadow.camera.near = 0.5;
+      directionalLight.shadow.camera.far = 1000;
+
+      directionalLight.shadow.mapSize.width = 4096;
+      directionalLight.shadow.mapSize.height = 4096;
+
+      scene.add(directionalLight);
+
+      // Position camera
+      camera.position.set(0, 5, -10);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+      // Controls
+      let actions = {
+        accelerate: false,
+        brake: false,
+        left: false,
+        right: false,
+      };
+
+      const maxSteerVal = 0.5;
+      const maxForce = 500;
+
+      document.addEventListener("keydown", (event) => {
+        switch (event.code) {
+          case "ArrowUp":
+          case "KeyW": // Add 'W' as forward control
+            actions.accelerate = true;
+            break;
+          case "ArrowDown":
+          case "KeyS": // Add 'S' as brake/reverse control
+            actions.brake = true;
+            break;
+          case "ArrowLeft":
+          case "KeyA": // Add 'A' as left turn control
+            actions.left = true;
+            break;
+          case "ArrowRight":
+          case "KeyD": // Add 'D' as right turn control
+            actions.right = true;
+            break;
+          case "KeyF":
+            flipCar();
+            break;
+        }
+      });
+
+      document.addEventListener("keyup", (event) => {
+        switch (event.code) {
+          case "ArrowUp":
+          case "KeyW": // Add 'W' as forward control
+            actions.accelerate = false;
+            break;
+          case "ArrowDown":
+          case "KeyS": // Add 'S' as brake/reverse control
+            actions.brake = false;
+            vehicle.setBrake(0, 0);
+            vehicle.setBrake(0, 1);
+            vehicle.setBrake(0, 2);
+            vehicle.setBrake(0, 3);
+            break;
+          case "ArrowLeft":
+          case "KeyA": // Add 'A' as left turn control
+            actions.left = false;
+            break;
+          case "ArrowRight":
+          case "KeyD": // Add 'D' as right turn control
+            actions.right = false;
+            break;
+        }
+      });
+
+      // Function to flip the car
+      function flipCar() {
+        // Reset the car's rotation to upright
+        chassisBody.quaternion.set(
+          0,
+          chassisBody.quaternion.y,
+          0,
+          chassisBody.quaternion.w
+        );
+        chassisBody.angularVelocity.set(0, 0, 0);
+        chassisBody.velocity.set(0, 0, 0);
+        // Lift the car slightly above ground
+        chassisBody.position.y += 1;
+      }
+
+      // Speedometer elements
+      const needleElement = document.getElementById("needle");
+      const speedTextElement = document.getElementById("speed-text");
+
+      // Tire marks
+      const tireMarks = [];
+      const maxTireMarks = 500;
+      const tireMarkGeometry = new THREE.PlaneGeometry(0.2, 0.5);
+      const tireMarkMaterial = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        side: THREE.DoubleSide,
+      });
+
+      // Acceleration modifier
+      let accelerationModifier = 1;
+
+      // Distance traveled
+      let distanceTraveled = 0;
+
+      // Flag to show bonus UI
+      let uiShown = false;
+
+      // Initialize tiles and road segments
+      const initialTileX =
+        Math.floor(chassisBody.position.x / tileSize) * tileSize + tileSize / 2;
+      const initialTileZ =
+        Math.floor(chassisBody.position.z / tileSize) * tileSize + tileSize / 2;
+      createTile(initialTileX, initialTileZ);
+
+      for (let i = -2; i <= 5; i++) {
+        createRoadSegment(i);
+      }
+
+      // Helper function to get speedometer color
+      function getSpeedometerColor(speed) {
+        // Speed thresholds
+        const redThreshold = 1000; // Speed at which background becomes fully red
+        const rainbowThreshold = 1000; // Speed at which rainbow effect starts
+
+        if (speed < redThreshold) {
+          // Gradually transition from dark gray to red
+          const intensity = Math.min(speed / redThreshold, 1);
+          return `radial-gradient(
+          circle at 75px 75px,
+          rgb(${68 + 187 * intensity}, ${68 - 68 * intensity}, ${
+            68 - 68 * intensity
+          }) 40%,
+          rgb(${34 + 187 * intensity}, ${34 - 34 * intensity}, ${
+            34 - 34 * intensity
+          }) 70%,
+          rgb(${0 + 187 * intensity}, 0, 0) 100%
+        )`;
+        } else {
+          // Rainbow effect after redThreshold
+          const hue = ((speed - rainbowThreshold) * 0.1) % 360;
+          const rgb = HSLToRGB(hue, 100, 50);
+          const rgb2 = HSLToRGB(hue, 100, 40);
+          const rgb3 = HSLToRGB(hue, 100, 30);
+
+          return `radial-gradient(
+          circle at 75px 75px,
+          rgb(${rgb.r}, ${rgb.g}, ${rgb.b}) 40%,
+          rgb(${rgb2.r}, ${rgb2.g}, ${rgb2.b}) 70%,
+          rgb(${rgb3.r}, ${rgb3.g}, ${rgb3.b}) 100%
+        )`;
+        }
+      }
+
+      // Add this helper function for HSL to RGB conversion
+      function HSLToRGB(h, s, l) {
+        s /= 100;
+        l /= 100;
+
+        const c = (1 - Math.abs(2 * l - 1)) * s;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = l - c / 2;
+        let r = 0,
+          g = 0,
+          b = 0;
+
+        if (0 <= h && h < 60) {
+          r = c;
+          g = x;
+          b = 0;
+        } else if (60 <= h && h < 120) {
+          r = x;
+          g = c;
+          b = 0;
+        } else if (120 <= h && h < 180) {
+          r = 0;
+          g = c;
+          b = x;
+        } else if (180 <= h && h < 240) {
+          r = 0;
+          g = x;
+          b = c;
+        } else if (240 <= h && h < 300) {
+          r = x;
+          g = 0;
+          b = c;
+        } else if (300 <= h && h < 360) {
+          r = c;
+          g = 0;
+          b = x;
+        }
+
+        return {
+          r: Math.round((r + m) * 255),
+          g: Math.round((g + m) * 255),
+          b: Math.round((b + m) * 255),
+        };
+      }
+
+      // Animation loop
+      const timeStep = 1 / 60;
+      const clock = new THREE.Clock();
+      let tireMarkTimer = 0;
+
+      // Crash variables
+      let isShaking = false;
+      let shakeDuration = 0;
+      let shakeIntensity = 0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const delta = clock.getDelta();
+
+        // Controls
+        let force = 0;
+        let steer = 0;
+
+        if (actions.left) {
+          steer = maxSteerVal;
+        }
+        if (actions.right) {
+          steer = -maxSteerVal;
+        }
+
+        vehicle.setSteeringValue(steer, 0);
+        vehicle.setSteeringValue(steer, 1);
+
+        // Get the local forward speed
+        const localVelocity = new CANNON.Vec3();
+        chassisBody.vectorToLocalFrame(chassisBody.velocity, localVelocity);
+        const forwardSpeed = localVelocity.z;
+
+        // used for higher acceleration so it has no speed cap and stops flipping
+        const mode2driving =
+          accelerationModifier > 5 && chassisBody.position.y < 1;
+
+        // Apply engine force or brake
+        if (actions.accelerate) {
+          vehicle.setBrake(0, 0);
+          vehicle.setBrake(0, 1);
+          vehicle.setBrake(0, 2);
+          vehicle.setBrake(0, 3);
+
+          // if mode2driving, add force to the car
+          if (mode2driving) {
+            chassisBody.applyLocalForce(
+              new CANNON.Vec3(0, 0, 500 * accelerationModifier),
+              new CANNON.Vec3(0, 0, 0)
+            );
+            force = 0;
+          } else {
+            force = -maxForce * accelerationModifier;
+          }
+        } else if (actions.brake) {
+          if (mode2driving) {
+            // Just directly apply force to the car (stops flipping)
+            chassisBody.applyLocalForce(
+              new CANNON.Vec3(0, 0, -500 * accelerationModifier),
+              new CANNON.Vec3(0, 0, 0)
+            );
+            vehicle.setBrake(0, 0);
+            vehicle.setBrake(0, 1);
+            vehicle.setBrake(0, 2);
+            vehicle.setBrake(0, 3);
+          } else {
+            if (forwardSpeed > 0) {
+              // Regular brake force
+              force = 0;
+              const scaledBrakeForce = 20 * accelerationModifier; // Base brake force * acceleration modifier
+              vehicle.setBrake(scaledBrakeForce, 0);
+              vehicle.setBrake(scaledBrakeForce, 1);
+              vehicle.setBrake(scaledBrakeForce, 2);
+              vehicle.setBrake(scaledBrakeForce, 3);
+            } else {
+              // Car is stopped or moving very slowly, start reversing
+              force = maxForce * accelerationModifier;
+              vehicle.setBrake(0, 0);
+              vehicle.setBrake(0, 1);
+              vehicle.setBrake(0, 2);
+              vehicle.setBrake(0, 3);
+            }
+          }
+        } else {
+          force = 0;
+          vehicle.setBrake(0.5, 0);
+          vehicle.setBrake(0.5, 1);
+          vehicle.setBrake(0.5, 2);
+          vehicle.setBrake(0.5, 3);
+        }
+
+        vehicle.applyEngineForce(force, 0);
+        vehicle.applyEngineForce(force, 1);
+        vehicle.applyEngineForce(force, 2);
+        vehicle.applyEngineForce(force, 3);
+
+        world.step(timeStep, delta, 3);
+
+        // Update car visual position
+        carMesh.position.copy(chassisBody.position);
+        carMesh.quaternion.copy(chassisBody.quaternion);
+
+        // Update distance traveled
+        distanceTraveled += chassisBody.velocity.length() * delta;
+        document.getElementById("distance-text").textContent =
+          "Distance: " + distanceTraveled.toFixed(0) + " m";
+
+        // Check for bonus UI
+        if (!uiShown && distanceTraveled >= 10000) {
+          uiShown = true;
+          document.getElementById("bonus-ui").style.display = "block";
+        }
+
+        // Camera follows the car
+        const relativeCameraOffset = new THREE.Vector3(0, 5, -10);
+        const cameraOffset = relativeCameraOffset.applyMatrix4(
+          carMesh.matrixWorld
+        );
+
+        // Apply camera shake if active
+        if (isShaking) {
+          const shakeX = (Math.random() - 0.5) * shakeIntensity;
+          const shakeY = (Math.random() - 0.5) * shakeIntensity;
+          const shakeZ = (Math.random() - 0.5) * shakeIntensity;
+          camera.position.set(
+            cameraOffset.x + shakeX,
+            cameraOffset.y + shakeY,
+            cameraOffset.z + shakeZ
+          );
+          shakeDuration -= delta;
+          if (shakeDuration <= 0) {
+            isShaking = false;
+            camera.position.copy(cameraOffset);
+          }
+        } else {
+          camera.position.lerp(cameraOffset, 0.05); // Changed from 0.1 to 0.05
+        }
+
+        // Smooth look-at interpolation
+        const targetPosition = new THREE.Vector3();
+        targetPosition.copy(carMesh.position);
+        targetPosition.y += 2; // Look slightly above the car
+        const currentLookAt = new THREE.Vector3();
+        camera.getWorldDirection(currentLookAt);
+        currentLookAt.multiplyScalar(10).add(camera.position);
+        currentLookAt.lerp(targetPosition, 0.05);
+        camera.lookAt(currentLookAt);
+
+        // Update speedometer
+        const speed = chassisBody.velocity.length();
+        const displayedSpeed = Math.abs(speed * 3.6).toFixed(0);
+        speedTextElement.textContent = displayedSpeed + " km/h";
+        const maxNeedleRotation = 220; // degrees
+        const needleRotation = (speed / 100) * maxNeedleRotation;
+        needleElement.style.transform = `rotate(${needleRotation}deg)`;
+
+        // Update speedometer background color
+        const speedometerElement = document.getElementById("speedometer");
+        speedometerElement.style.background =
+          getSpeedometerColor(displayedSpeed);
+
+        // Update acceleration text
+        document.getElementById("acceleration-text").textContent =
+          "Acceleration: " + accelerationModifier.toFixed(1);
+
+        // Create tire marks
+        tireMarkTimer += delta;
+        if (tireMarkTimer > 0.05) {
+          tireMarkTimer = 0;
+
+          vehicle.wheelInfos.forEach((wheelInfo, index) => {
+            const position = wheelInfo.worldTransform.position.clone();
+            const quaternion = wheelInfo.worldTransform.quaternion.clone();
+
+            const tireMark = new THREE.Mesh(
+              tireMarkGeometry,
+              tireMarkMaterial
+            );
+            tireMark.position.copy(position);
+            tireMark.quaternion.copy(quaternion);
+
+            // Adjust tire mark to be on the ground
+            tireMark.rotateX(Math.PI / 2);
+            tireMark.position.y = 0.01;
+
+            scene.add(tireMark);
+            tireMarks.push(tireMark);
+
+            if (tireMarks.length > maxTireMarks) {
+              const oldTireMark = tireMarks.shift();
+              scene.remove(oldTireMark);
+            }
+          });
+        }
+
+        // Generate new ground tiles and road segments as needed
+        const carX = chassisBody.position.x;
+        const carZ = chassisBody.position.z;
+
+        const tileCenterX =
+          Math.floor(carX / tileSize) * tileSize + tileSize / 2;
+        const tileCenterZ =
+          Math.floor(carZ / tileSize) * tileSize + tileSize / 2;
+
+        const tileRange = 2; // Increase range to generate more tiles
+        for (let dx = -tileRange; dx <= tileRange; dx++) {
+          for (let dz = -tileRange; dz <= tileRange; dz++) {
+            const x = tileCenterX + dx * tileSize;
+            const z = tileCenterZ + dz * tileSize;
+            createTile(x, z);
+          }
+        }
+
+        // Remove distant tiles
+        for (const key in tiles) {
+          const tile = tiles[key];
+          const distance = tile.ground.position.distanceTo(
+            chassisBody.position
+          );
+          if (distance > maxTilesDistance) {
+            removeTile(key);
+          }
+        }
+
+        // Generate new road segments
+        const roadIndex = Math.floor(carX / roadLength);
+        const roadRange = 5; // Increase range to generate more road segments
+        for (let i = roadIndex - roadRange; i <= roadIndex + roadRange; i++) {
+          createRoadSegment(i);
+        }
+
+        // Remove distant road segments
+        for (const index in roadSegments) {
+          const segment = roadSegments[index];
+          const distance = Math.abs(
+            segment.road.position.z - chassisBody.position.z
+          );
+          if (distance > maxTilesDistance * 2) {
+            removeRoadSegment(index);
+          }
+        }
+
+        // Remove distant boosts
+        for (let i = boosts.length - 1; i >= 0; i--) {
+          const boost = boosts[i];
+          const distance = boost.position.distanceTo(chassisBody.position);
+          if (distance > maxTilesDistance) {
+            scene.remove(boost);
+            boosts.splice(i, 1);
+          }
+        }
+
+        // Check for boosts collection
+        for (let i = boosts.length - 1; i >= 0; i--) {
+          const boost = boosts[i];
+          const distance = boost.position.distanceTo(carMesh.position);
+          if (distance < 2) {
+            // Remove boost from scene
+            scene.remove(boost);
+            boosts.splice(i, 1);
+
+            // Multiply accelerationModifier
+            accelerationModifier *= 1.1;
+          }
+        }
+
+        // Move light so the shadows show up no matter where the car is
+        directionalLight.target.position.set(
+          camera.position.x,
+          0,
+          camera.position.z
+        );
+        directionalLight.target.updateMatrixWorld();
+        directionalLight.position
+          .set(camera.position.x + 100, 100, camera.position.z - 100)
+          .add(new THREE.Vector3(10, 10, 5));
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      // Handle window resize
+      window.addEventListener("resize", onWindowResize, false);
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Handle hide UI button
+      document
+        .getElementById("hide-ui")
+        .addEventListener("click", () => {
+          document.getElementById("bonus-ui").style.display = "none";
+        });
+
+      // Crash Physics Implementation
+
+      // Function to handle crash effects
+      function triggerCrashEffects(impactSpeed) {
+        const crashFlash = document.getElementById("crash-flash");
+        crashFlash.style.opacity = 1;
+        setTimeout(() => {
+          crashFlash.style.opacity = 0;
+        }, 200);
+
+        // Shake camera based on impact speed
+        isShaking = true;
+        shakeDuration = 0.5; // seconds
+        shakeIntensity = Math.min(impactSpeed * 0.05, 0.5);
+
+        // Reduce accelerationModifier temporarily
+        const originalAcceleration = accelerationModifier;
+        accelerationModifier = Math.max(accelerationModifier * 0.5, 0.5);
+        setTimeout(() => {
+          accelerationModifier = originalAcceleration;
+        }, 1000);
+      }
+
+      // Listen for collision events
+      chassisBody.addEventListener("collide", function(event) {
+        const impactStrength = event.contact.getImpactVelocityAlongNormal();
+        if (impactStrength > 10) { // Threshold for crash
+          triggerCrashEffects(impactStrength);
+        }
+      });
+    </script>
+</body>
+</html>

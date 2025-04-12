@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Lama Games</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5YT3ZNDK8V"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-5YT3ZNDK8V');
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>Lama Games</h1>
+        </div>
+    </header>
+    <main>
+        <div class="register-container">
+            <h2>Sign In</h2>
+            <form class="register-form" id="signinForm">
+                <input type="email" placeholder="Enter your email" required>
+                <input type="password" placeholder="Enter your password" required>
+                <p class="error-message" id="signinError"></p>
+                <button type="submit">Sign In</button>
+            </form>
+        </div>
+    </main>
+    <div class="ad-container">
+        <!-- AdForGames.com code begin -->
+        <script>var afg={};afg.u=6532;afg.s=1;
+        document.write("<sc"+"ript src='//js.adforgames.com/cd.js'></sc"+"ript>");</script>
+        <!-- AdForGames.com code end -->
+    </div>
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('signinForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = e.target.querySelector('input[type="email"]').value;
+            const password = e.target.querySelector('input[type="password"]').value;
+            const errorElement = document.getElementById('signinError');
+
+            const accounts = window.getAccounts();
+            
+            if (!accounts[email]) {
+                errorElement.textContent = "Email not found!";
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            if (accounts[email] !== password) {
+                errorElement.textContent = "Incorrect password!";
+                errorElement.style.display = 'block';
+                return;
+            }
+
+            localStorage.setItem('userEmail', email);
+            alert('Sign in successful!');
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

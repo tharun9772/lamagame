@@ -1,0 +1,1466 @@
+  <title>Physics Playground</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+    
+    #menu, #game, #mod-maker, #mods-page, #achievements-page {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+      background-size: 40px 40px;
+      background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+    }
+
+    #mod-maker, #mods-page, #achievements-page {
+      display: none;
+      padding: 20px;
+    }
+
+    .mod-controls {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      background: white;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .mod-preview {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: white;
+      padding: 20px;
+      border: 2px solid #333;
+      border-radius: 5px;
+      width: 300px;
+      height: 300px;
+    }
+
+    #preview-canvas {
+      border: 2px solid #333;
+      background: white;
+    }
+
+    .mod-btn {
+      padding: 10px 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    #size-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #size-slider {
+      width: 200px;
+    }
+
+    #menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      position: relative;
+    }
+
+    #menuRenderCanvas {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .title {
+      font-size: 48px;
+      color: #333;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      position: relative;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .title::after {
+      content: '';
+      position: absolute;
+      left: -10px;
+      right: -10px;
+      bottom: -5px;
+      height: 4px;
+      background: #333;
+      transform: rotate(-1deg);
+      opacity: 0.7;
+    }
+
+    .play-btn {
+      padding: 15px 50px;
+      font-size: 24px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      transform: rotate(-1deg);
+    }
+
+    .play-btn::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border: 2px solid #333;
+      border-radius: 4px;
+      z-index: -1;
+    }
+
+    .play-btn:hover {
+      transform: rotate(1deg);
+    }
+
+    .credit {
+      position: absolute;
+      bottom: 20px;
+      color: #666;
+    }
+
+    #game {
+      display: none;
+    }
+
+    .spawn-buttons {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    .custom-spawn-buttons {
+      position: absolute;
+      top: 420px;
+      left: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    .spawn-btn {
+      padding: 10px 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    .controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    #back-to-menu {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      z-index: 1000;
+    }
+
+    canvas {
+      background: transparent !important;
+    }
+
+    #menu .title, #menu .play-btn, #menu .credit {
+      position: relative;
+      z-index: 1000;
+    }
+
+    #achievements-page {
+      display: none;
+      padding: 20px;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+        linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+      background-size: 40px 40px;
+      background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+      overflow-y: auto;
+      padding-right: 20px; 
+      max-height: 100vh;
+    }
+
+    .achievement {
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .achievement.locked {
+      filter: brightness(0.7);
+    }
+
+    .achievement-icon {
+      width: 40px;
+      height: 40px;
+      background: #eee;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .achievement-info {
+      flex-grow: 1;
+    }
+
+    .achievement-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .achievement-desc {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .achievement-notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      animation: slideUp 0.5s ease-out;
+      z-index: 9999;
+    }
+
+    .back-from-achievements {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+    }
+
+    #achievements-list {
+      padding-bottom: 60px; 
+    }
+
+    ::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border: 2px solid #333;
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: white;
+      border: 2px solid #333;
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #eee;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translate(-50%, 100%);
+        opacity: 0;
+      }
+      to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+      }
+    }
+    
+    .mod-type-select {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .mod-type-btn {
+      padding: 10px 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+
+    .mod-type-btn.selected {
+      background: #333;
+      color: white;
+    }
+
+    .mod-field {
+      display: none;
+      margin-bottom: 15px;
+    }
+
+    .mod-field.active {
+      display: block;
+    }
+
+    #background-color-input {
+      width: 100px;
+      height: 40px;
+      padding: 5px;
+      border: 2px solid #333;
+      border-radius: 5px;
+    }
+
+    #js-file-upload {
+      margin-bottom: 10px;
+    }
+
+    .js-code-preview {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+      padding: 10px;
+      border: 2px solid #333;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      white-space: pre;
+      overflow: auto;
+    }
+    
+    .mod-input {
+      padding: 8px;
+      margin-bottom: 10px;  
+      border: 2px solid #333;
+      border-radius: 5px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      width: 100%;
+    }
+    
+    .mod-spawn-dropdown {
+      position: absolute;
+      top: 420px;
+      left: 20px;
+      background: white;
+      border: 2px solid #333;
+      border-radius: 5px;
+      padding: 10px;
+      z-index: 1000;
+    }
+
+    .mod-spawn-dropdown select {
+      padding: 8px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      border: 2px solid #333;
+      border-radius: 5px;
+      width: 200px;
+      margin-bottom: 10px;
+    }
+
+    .mod-spawn-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1 class="title">Physics Playground</h1>
+    <button class="play-btn">Play</button>
+    <button class="play-btn" id="mod-maker-btn">Mod Maker</button>
+    <button class="play-btn" id="mods-btn">Mods</button>
+    <button class="play-btn" id="achievements-btn">Achievements</button>
+    <div class="credit">By Lama Games :)</div>
+  </div>
+
+  <div id="game">
+    <div class="spawn-buttons">
+      <button class="spawn-btn" data-type="circle">Spawn Circle</button>
+      <button class="spawn-btn" data-type="person">Spawn Person</button>
+      <button class="spawn-btn" data-type="rectangle">Spawn Box</button>
+      <button class="spawn-btn" data-type="triangle">Spawn Triangle</button>
+      <button class="spawn-btn" data-type="domino">Spawn Domino</button>
+      <button class="spawn-btn" data-type="seesaw">Spawn Seesaw</button>
+      <button class="spawn-btn" data-type="spike">Spawn Spike</button>
+      <button class="spawn-btn" data-type="spring">Spawn Spring</button>
+      <button class="spawn-btn" data-type="chain">Spawn Chain</button>
+      <button class="spawn-btn" data-type="cannonball">Spawn Cannonball</button>
+      <button class="spawn-btn" data-type="fighter">Spawn Fighter</button>
+    </div>
+    <div class="custom-spawn-buttons"></div>
+    <div class="mod-spawn-dropdown">
+      <select id="mod-selector">
+        <option value>Select a mod object...</option>
+      </select>
+      <div class="mod-spawn-buttons"></div>
+    </div>
+    <div class="controls">
+      <button id="gravity-toggle">Toggle Gravity</button>
+      <button id="clear-all">Clear All</button>
+      <button id="add-platform">Add Platform</button>
+    </div>
+    <button id="back-to-menu">Back to Menu</button>
+  </div>
+
+  <div id="mod-maker">
+    <div class="mod-controls">
+      <div class="mod-type-select">
+        <button class="mod-type-btn selected" data-type="object">Object Mod</button>
+        <button class="mod-type-btn" data-type="background">Background Mod</button>
+        <button class="mod-type-btn" data-type="javascript">JavaScript Mod</button>
+      </div>
+
+      <div class="mod-field active" id="object-mod">
+        <input type="text" id="mod-name" placeholder="Enter mod name" class="mod-input">
+        <input type="file" id="image-upload" accept="image/*">
+        <div id="size-controls">
+          <span>Size:</span>
+          <input type="range" id="size-slider" min="20" max="200" value="60">
+          <span id="size-value">60px</span>
+        </div>
+      </div>
+
+      <div class="mod-field" id="background-mod">
+        <input type="color" id="background-color-input" value="#ffffff">
+        <input type="file" id="background-image-upload" accept="image/*">
+      </div>
+
+      <div class="mod-field" id="javascript-mod">
+        <input type="file" id="js-file-upload" accept=".js">
+        <div class="js-code-preview"></div>
+      </div>
+      <button class="mod-btn" id="save-mod">Save Mod</button>
+      <button class="mod-btn" id="back-from-mod-maker">Back to Menu</button>
+    </div>
+    <div class="mod-preview">
+      <canvas id="preview-canvas" width="300" height="300"></canvas>
+    </div>
+  </div>
+
+  <div id="mods-page">
+    <h2>Your Mods</h2>
+    <div id="mods-list"></div>
+    <button class="mod-btn" id="load-mod">Load Mod</button>
+    <button class="mod-btn" id="back-from-mods">Back to Menu</button>
+  </div>
+
+  <input type="file" id="load-mod-file" accept=".ppgm" style="display: none;">
+
+  <div id="achievements-page">
+    <h2>Achievements</h2>
+    <div id="achievements-list"></div>
+    <button class="mod-btn back-from-achievements" id="back-from-achievements">Back to Menu</button>
+  </div>
+
+  <script>const menu = document.getElementById('menu');
+const game = document.getElementById('game');
+const modMaker = document.getElementById('mod-maker');
+const modsPage = document.getElementById('mods-page');
+const playBtn = document.querySelector('.play-btn');
+const modMakerBtn = document.getElementById('mod-maker-btn');
+const modsBtn = document.getElementById('mods-btn');
+const backBtn = document.getElementById('back-to-menu');
+const backFromModMakerBtn = document.getElementById('back-from-mod-maker');
+const backFromModsBtn = document.getElementById('back-from-mods');
+const imageUpload = document.getElementById('image-upload');
+const sizeSlider = document.getElementById('size-slider');
+const sizeValue = document.getElementById('size-value');
+const previewCanvas = document.getElementById('preview-canvas');
+const ctx = previewCanvas.getContext('2d');
+let currentModImage = null;
+const mods = [];
+const engine = Matter.Engine.create();
+Matter.Events.on(engine, 'beforeUpdate', function () {
+  const bodies = Matter.Composite.allBodies(engine.world);
+  bodies.forEach(body => {
+    if (body.ignoreGravity) {
+      body.force.y -= body.mass * engine.world.gravity.y * engine.world.gravity.scale;
+    }
+  });
+});
+const render = Matter.Render.create({
+  element: game,
+  engine: engine,
+  options: {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    wireframes: false,
+    background: 'transparent'
+  }
+});
+const mouse = Matter.Mouse.create(render.canvas);
+const mouseConstraint = Matter.MouseConstraint.create(engine, {
+  mouse: mouse,
+  constraint: {
+    stiffness: 0.2,
+    render: {
+      visible: false
+    }
+  }
+});
+Matter.World.add(engine.world, mouseConstraint);
+render.mouse = mouse;
+const ground = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 60, window.innerWidth, 60, {
+  isStatic: true,
+  render: {
+    fillStyle: 'white',
+    strokeStyle: '#333',
+    lineWidth: 4
+  }
+});
+Matter.World.add(engine.world, ground);
+let isGravityNormal = true;
+const achievements = {
+  regularAchievements: [{
+    id: 'first_spawn',
+    title: 'First Steps',
+    description: 'Spawn your first object',
+    icon: '🎮',
+    unlocked: false
+  }, {
+    id: 'gravity_master',
+    title: 'Gravity Master',
+    description: 'Toggle gravity 10 times',
+    icon: '🌍',
+    unlocked: false,
+    progress: 0
+  }, {
+    id: 'object_collector',
+    title: 'Object Collector',
+    description: 'Spawn one of each object type',
+    icon: '📦',
+    unlocked: false,
+    spawnedTypes: new Set()
+  }, {
+    id: 'cleanup_crew',
+    title: 'Cleanup Crew',
+    description: 'Clear all objects 5 times',
+    icon: '🧹',
+    unlocked: false,
+    progress: 0
+  }, {
+    id: 'mod_creator',
+    title: 'Mod Creator',
+    description: 'Create your first mod',
+    icon: '🛠️',
+    unlocked: false
+  }],
+  secretAchievements: [{
+    id: 'physics_party',
+    title: '???',
+    description: 'Have 50 objects in the scene at once',
+    icon: '🎉',
+    unlocked: false
+  }, {
+    id: 'speed_demon',
+    title: '???',
+    description: 'Make an object reach extreme velocity',
+    icon: '⚡',
+    unlocked: false
+  }, {
+    id: 'tower_builder',
+    title: '???',
+    description: 'Stack 10 objects on top of each other',
+    icon: '🏗️',
+    unlocked: false
+  }, {
+    id: 'night_owl',
+    title: '???',
+    description: 'Play between 12 AM and 4 AM',
+    icon: '🦉',
+    unlocked: false
+  }, {
+    id: 'chain_reaction',
+    title: '???',
+    description: 'Cause a chain reaction with 20+ objects',
+    icon: '💥',
+    unlocked: false
+  }]
+};
+function loadAchievements() {
+  const savedAchievements = localStorage.getItem('physics_playground_achievements');
+  if (savedAchievements) {
+    const parsed = JSON.parse(savedAchievements);
+    achievements.regularAchievements.forEach((achievement, i) => {
+      achievement.unlocked = parsed.regularAchievements[i].unlocked;
+      achievement.progress = parsed.regularAchievements[i].progress;
+      if (achievement.spawnedTypes) {
+        achievement.spawnedTypes = new Set(parsed.regularAchievements[i].spawnedTypes);
+      }
+    });
+    achievements.secretAchievements.forEach((achievement, i) => {
+      achievement.unlocked = parsed.secretAchievements[i].unlocked;
+    });
+  }
+}
+function saveAchievements() {
+  const toSave = {
+    regularAchievements: achievements.regularAchievements.map(a => ({
+      ...a,
+      spawnedTypes: a.spawnedTypes ? Array.from(a.spawnedTypes) : undefined
+    })),
+    secretAchievements: achievements.secretAchievements
+  };
+  localStorage.setItem('physics_playground_achievements', JSON.stringify(toSave));
+}
+function showAchievementNotification(achievement) {
+  const notification = document.createElement('div');
+  notification.className = 'achievement-notification';
+  notification.innerHTML = `
+    <div class="achievement-icon">${achievement.icon}</div>
+    <div class="achievement-info">
+      <div class="achievement-title">Achievement Unlocked: ${achievement.title}</div>
+      <div class="achievement-desc">${achievement.description}</div>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  setTimeout(() => notification.remove(), 3000);
+}
+function unlockAchievement(id) {
+  const achievement = [...achievements.regularAchievements, ...achievements.secretAchievements].find(a => a.id === id);
+  if (achievement && !achievement.unlocked) {
+    achievement.unlocked = true;
+    showAchievementNotification(achievement);
+    saveAchievements();
+    displayAchievements();
+  }
+}
+function trackAchievements() {
+  document.querySelectorAll('.spawn-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      unlockAchievement('first_spawn');
+      const objectCollector = achievements.regularAchievements.find(a => a.id === 'object_collector');
+      objectCollector.spawnedTypes.add(btn.dataset.type);
+      if (objectCollector.spawnedTypes.size === 11 && !objectCollector.unlocked) {
+        unlockAchievement('object_collector');
+      }
+    });
+  });
+  document.getElementById('gravity-toggle').addEventListener('click', () => {
+    const gravityMaster = achievements.regularAchievements.find(a => a.id === 'gravity_master');
+    if (!gravityMaster.unlocked) {
+      gravityMaster.progress++;
+      if (gravityMaster.progress >= 10) {
+        unlockAchievement('gravity_master');
+      }
+    }
+  });
+  document.getElementById('clear-all').addEventListener('click', () => {
+    const cleanupCrew = achievements.regularAchievements.find(a => a.id === 'cleanup_crew');
+    if (!cleanupCrew.unlocked) {
+      cleanupCrew.progress++;
+      if (cleanupCrew.progress >= 5) {
+        unlockAchievement('cleanup_crew');
+      }
+    }
+  });
+  document.getElementById('save-mod').addEventListener('click', () => {
+    unlockAchievement('mod_creator');
+  });
+  Matter.Events.on(engine, 'afterUpdate', () => {
+    const bodies = Matter.Composite.allBodies(engine.world);
+    if (bodies.length >= 50) {
+      unlockAchievement('physics_party');
+    }
+    bodies.forEach(body => {
+      const velocity = Math.sqrt(body.velocity.x ** 2 + body.velocity.y ** 2);
+      if (velocity > 50) {
+        unlockAchievement('speed_demon');
+      }
+    });
+    if (bodies.filter(b => b.speed > 5).length >= 20) {
+      unlockAchievement('chain_reaction');
+    }
+  });
+  function checkNightOwl() {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 4) {
+      unlockAchievement('night_owl');
+    }
+  }
+  setInterval(checkNightOwl, 60000);
+  checkNightOwl();
+}
+function displayAchievements() {
+  const achievementsList = document.getElementById('achievements-list');
+  achievementsList.innerHTML = '';
+  const allAchievements = [...achievements.regularAchievements, ...achievements.secretAchievements];
+  allAchievements.forEach(achievement => {
+    const achievementElem = document.createElement('div');
+    achievementElem.className = `achievement ${achievement.unlocked ? '' : 'locked'}`;
+    let title = achievement.title;
+    let description = achievement.description;
+    let icon = achievement.icon;
+    if (!achievement.unlocked && achievement.title === '???') {
+      description = 'Keep playing to unlock this secret achievement!';
+      icon = '❓';
+    }
+    achievementElem.innerHTML = `
+      <div class="achievement-icon">${icon}</div>
+      <div class="achievement-info">
+        <div class="achievement-title">${title}</div>
+        <div class="achievement-desc">${description}</div>
+      </div>
+    `;
+    achievementsList.appendChild(achievementElem);
+  });
+}
+const achievementsBtn = document.getElementById('achievements-btn');
+const achievementsPage = document.getElementById('achievements-page');
+const backFromAchievementsBtn = document.getElementById('back-from-achievements');
+achievementsBtn.addEventListener('click', () => {
+  menu.style.display = 'none';
+  achievementsPage.style.display = 'block';
+  displayAchievements();
+});
+backFromAchievementsBtn.addEventListener('click', () => {
+  achievementsPage.style.display = 'none';
+  menu.style.display = 'flex';
+});
+document.getElementById('gravity-toggle').addEventListener('click', () => {
+  isGravityNormal = !isGravityNormal;
+  engine.world.gravity.y = isGravityNormal ? 1 : -1;
+});
+document.getElementById('clear-all').addEventListener('click', () => {
+  const bodies = Matter.Composite.allBodies(engine.world);
+  bodies.forEach(body => {
+    if (!body.isStatic) {
+      Matter.World.remove(engine.world, body);
+    }
+  });
+});
+document.getElementById('add-platform').addEventListener('click', () => {
+  const platform = Matter.Bodies.rectangle(Math.random() * (window.innerWidth - 200) + 100, Math.random() * (window.innerHeight - 200) + 100, 200, 20, {
+    ignoreGravity: true,
+    angle: Math.random() * Math.PI / 4 - Math.PI / 8,
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, platform);
+});
+playBtn.addEventListener('click', () => {
+  Matter.Engine.clear(menuEngine);
+  Matter.Render.stop(menuRender);
+  menu.style.display = 'none';
+  game.style.display = 'block';
+  const modSelector = document.getElementById('mod-selector');
+  const modSpawnButtons = document.querySelector('.mod-spawn-buttons');
+  modSelector.innerHTML = '<option value="">Select a mod object...</option>';
+  modSpawnButtons.innerHTML = '';
+  mods.forEach(mod => {
+    if (mod.type === 'object') {
+      const option = document.createElement('option');
+      option.value = mod.name;
+      option.textContent = mod.name;
+      modSelector.appendChild(option);
+    }
+  });
+  Matter.Engine.run(engine);
+  Matter.Render.run(render);
+});
+function createCustomObject(x, y, mod) {
+  const customObj = Matter.Bodies.rectangle(x, y, mod.size, mod.size, {
+    render: {
+      sprite: {
+        texture: mod.imageUrl,
+        xScale: mod.size / 100,
+        yScale: mod.size / 100
+      }
+    }
+  });
+  Matter.World.add(engine.world, customObj);
+}
+modMakerBtn.addEventListener('click', () => {
+  menu.style.display = 'none';
+  modMaker.style.display = 'block';
+});
+modsBtn.addEventListener('click', () => {
+  menu.style.display = 'none';
+  modsPage.style.display = 'block';
+  displayMods();
+});
+backFromModMakerBtn.addEventListener('click', () => {
+  modMaker.style.display = 'none';
+  menu.style.display = 'flex';
+});
+backFromModsBtn.addEventListener('click', () => {
+  modsPage.style.display = 'none';
+  menu.style.display = 'flex';
+});
+imageUpload.addEventListener('change', async e => {
+  if (e.target.files && e.target.files[0]) {
+    try {
+      const url = URL.createObjectURL(e.target.files[0]);
+      currentModImage = new Image();
+      currentModImage.src = url;
+      currentModImage.onload = () => updatePreview();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  }
+});
+sizeSlider.addEventListener('input', () => {
+  sizeValue.textContent = `${sizeSlider.value}px`;
+  updatePreview();
+});
+function updatePreview() {
+  if (!currentModImage) return;
+  ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  const size = parseInt(sizeSlider.value);
+  const x = (previewCanvas.width - size) / 2;
+  const y = (previewCanvas.height - size) / 2;
+  ctx.drawImage(currentModImage, x, y, size, size);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x, y, size, size);
+}
+const modTypes = {
+  object: {
+    save: async data => {
+      const mod = {
+        type: 'object',
+        name: data.name,
+        imageUrl: data.imageUrl,
+        size: data.size
+      };
+      mods.push(mod);
+      const customSpawnBtn = document.createElement('button');
+      customSpawnBtn.className = 'spawn-btn';
+      customSpawnBtn.textContent = `Spawn ${mod.name}`;
+      customSpawnBtn.addEventListener('click', () => {
+        const x = Math.random() * (window.innerWidth - 100) + 50;
+        const y = 100;
+        createCustomObject(x, y, mod);
+      });
+      document.querySelector('.custom-spawn-buttons').appendChild(customSpawnBtn);
+    }
+  },
+  background: {
+    save: async data => {
+      mods.push({
+        type: 'background',
+        color: data.color,
+        imageUrl: data.imageUrl
+      });
+    }
+  },
+  javascript: {
+    save: async data => {
+      mods.push({
+        type: 'javascript',
+        code: data.code
+      });
+    }
+  }
+};
+document.getElementById('mod-selector').addEventListener('change', e => {
+  const modSpawnButtons = document.querySelector('.mod-spawn-buttons');
+  modSpawnButtons.innerHTML = '';
+  if (e.target.value) {
+    const selectedMod = mods.find(mod => mod.type === 'object' && mod.name === e.target.value);
+    if (selectedMod) {
+      const spawnBtn = document.createElement('button');
+      spawnBtn.className = 'spawn-btn';
+      spawnBtn.textContent = `Spawn ${selectedMod.name}`;
+      spawnBtn.addEventListener('click', () => {
+        const x = Math.random() * (window.innerWidth - 100) + 50;
+        const y = 100;
+        createCustomObject(x, y, selectedMod);
+      });
+      modSpawnButtons.appendChild(spawnBtn);
+    }
+  }
+});
+document.getElementById('background-image-upload').addEventListener('change', async e => {
+  if (e.target.files && e.target.files[0]) {
+    try {
+      const url = URL.createObjectURL(e.target.files[0]);
+      currentModImage = new Image();
+      currentModImage.src = url;
+      currentModImage.onload = () => updatePreview();
+    } catch (error) {
+      console.error('Error uploading background:', error);
+    }
+  }
+});
+document.getElementById('js-file-upload').addEventListener('change', async e => {
+  if (e.target.files && e.target.files[0]) {
+    const reader = new FileReader();
+    reader.onload = event => {
+      document.querySelector('.js-code-preview').textContent = event.target.result;
+    };
+    reader.readAsText(e.target.files[0]);
+  }
+});
+document.getElementById('save-mod').addEventListener('click', async () => {
+  const selectedType = document.querySelector('.mod-type-btn.selected').dataset.type;
+  try {
+    switch (selectedType) {
+      case 'object':
+        if (!currentModImage) return;
+        const modName = document.getElementById('mod-name').value || 'Custom Object';
+        await modTypes.object.save({
+          name: modName,
+          imageUrl: currentModImage.src,
+          size: parseInt(sizeSlider.value)
+        });
+        break;
+      case 'background':
+        await modTypes.background.save({
+          color: document.getElementById('background-color-input').value,
+          imageUrl: currentModImage?.src || null
+        });
+        break;
+      case 'javascript':
+        const code = document.querySelector('.js-code-preview').textContent;
+        if (!code) return;
+        await modTypes.javascript.save({
+          code: code
+        });
+        break;
+    }
+    alert('Mod saved successfully!');
+  } catch (error) {
+    console.error('Error saving mod:', error);
+    alert('Error saving mod: ' + error.message);
+  }
+});
+function displayMods() {
+  try {
+    const modsList = document.getElementById('mods-list');
+    modsList.innerHTML = '';
+
+    if (!mods || mods.length === 0) {
+      const noModsMsg = document.createElement('p');
+      noModsMsg.textContent = 'no mods :(';
+      noModsMsg.style.textAlign = 'center';
+      noModsMsg.style.fontSize = '20px';
+      noModsMsg.style.color = '#666';
+      modsList.appendChild(noModsMsg);
+      return;
+    }
+
+    mods.forEach(mod => {
+      try {
+        const modElement = document.createElement('div');
+        modElement.style.margin = '10px';
+        modElement.style.padding = '10px';
+        modElement.style.border = '2px solid #333';
+        modElement.style.display = 'inline-block';
+
+        if (mod.name) {
+          const nameLabel = document.createElement('div');
+          nameLabel.textContent = mod.name;
+          nameLabel.style.fontWeight = 'bold';
+          nameLabel.style.marginBottom = '5px';
+          modElement.appendChild(nameLabel);
+        }
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download';
+        downloadBtn.className = 'mod-btn';
+        downloadBtn.style.marginTop = '10px';
+        downloadBtn.addEventListener('click', () => downloadMod(mod));
+
+        switch (mod.type) {
+          case 'object':
+            const img = document.createElement('img');
+            img.src = mod.imageUrl;
+            img.style.width = `${mod.size}px`;
+            img.style.height = `${mod.size}px`;
+            modElement.appendChild(img);
+            break;
+          case 'background':
+            const preview = document.createElement('div');
+            preview.style.width = '100px';
+            preview.style.height = '100px';
+            preview.style.backgroundColor = mod.color;
+            if (mod.imageUrl) {
+              preview.style.backgroundImage = `url(${mod.imageUrl})`;
+              preview.style.backgroundSize = 'cover';
+            }
+            modElement.appendChild(preview);
+            break;
+          case 'javascript':
+            const code = document.createElement('pre');
+            code.style.margin = '0';
+            code.style.maxHeight = '100px';
+            code.style.overflow = 'auto';
+            code.style.fontSize = '12px';
+            code.textContent = mod.code.slice(0, 200) + (mod.code.length > 200 ? '...' : '');
+            modElement.appendChild(code);
+            break;
+        }
+
+        const typeLabel = document.createElement('div');
+        typeLabel.textContent = `Type: ${mod.type}`;
+        typeLabel.style.marginTop = '5px';
+        modElement.appendChild(typeLabel);
+
+        modElement.appendChild(downloadBtn);
+        modsList.appendChild(modElement);
+      } catch (err) {
+        console.error('Error creating mod element:', err);
+      }
+    });
+  } catch (err) {
+    console.error('Error in displayMods:', err);
+  }
+}
+backBtn.addEventListener('click', () => {
+  menu.style.display = 'flex';
+  game.style.display = 'none';
+  document.querySelector('.custom-spawn-buttons').innerHTML = '';
+  document.querySelector('.mod-spawn-buttons').innerHTML = '';
+  document.getElementById('mod-selector').value = '';
+  Matter.Engine.clear(engine);
+  Matter.World.clear(engine.world, false);
+  Matter.World.add(engine.world, [ground, mouseConstraint]);
+});
+function createCircle(x, y) {
+  const circle = Matter.Bodies.circle(x, y, 30, {
+    restitution: 0.8,
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, circle);
+}
+function createPerson(x, y) {
+  const head = Matter.Bodies.circle(x, y, 15, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const body = Matter.Bodies.rectangle(x, y + 40, 10, 40, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const legs = Matter.Bodies.rectangle(x, y + 70, 30, 10, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const compoundBody = Matter.Body.create({
+    parts: [head, body, legs],
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, compoundBody);
+}
+function createRectangle(x, y) {
+  const box = Matter.Bodies.rectangle(x, y, 60, 60, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, box);
+}
+function createTriangle(x, y) {
+  const triangle = Matter.Bodies.polygon(x, y, 3, 40, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, triangle);
+}
+function createDomino(x, y) {
+  const domino = Matter.Bodies.rectangle(x, y, 20, 60, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, domino);
+}
+function createSeesaw(x, y) {
+  const platform = Matter.Bodies.rectangle(x, y, 200, 20, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    },
+    ignoreGravity: true
+  });
+  const pivot = Matter.Bodies.circle(x, y + 20, 10, {
+    isStatic: true,
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const constraint = Matter.Constraint.create({
+    bodyA: platform,
+    bodyB: pivot,
+    pointB: {
+      x: 0,
+      y: -10
+    },
+    length: 0,
+    stiffness: 1
+  });
+  Matter.World.add(engine.world, [platform, pivot, constraint]);
+}
+function createSpike(x, y) {
+  const width = 20;
+  const height = 40;
+  const spike = Matter.Bodies.polygon(x, y, 3, 20, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    },
+    angle: Math.PI
+  });
+  Matter.World.add(engine.world, spike);
+}
+function createSpring(x, y) {
+  const spring = Matter.Bodies.rectangle(x, y, 40, 20, {
+    restitution: 1.5,
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    },
+    chamfer: {
+      radius: 10
+    }
+  });
+  Matter.World.add(engine.world, spring);
+}
+function createChain(x, y) {
+  let prev = null;
+  for (let i = 0; i < 8; i++) {
+    const link = Matter.Bodies.rectangle(x, y + i * 20, 20, 10, {
+      render: {
+        fillStyle: 'white',
+        strokeStyle: '#333',
+        lineWidth: 4
+      }
+    });
+    Matter.World.add(engine.world, link);
+    if (prev) {
+      const constraint = Matter.Constraint.create({
+        bodyA: prev,
+        bodyB: link,
+        stiffness: 0.8
+      });
+      Matter.World.add(engine.world, constraint);
+    }
+    prev = link;
+  }
+}
+function createCannonball(x, y) {
+  const ball = Matter.Bodies.circle(x, y, 25, {
+    density: 0.1,
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.Body.setVelocity(ball, {
+    x: (Math.random() - 0.5) * 20,
+    y: -15
+  });
+  Matter.World.add(engine.world, ball);
+}
+function createFighter(x, y) {
+  const head = Matter.Bodies.circle(x, y, 15, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const body = Matter.Bodies.rectangle(x, y + 40, 10, 40, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const arm = Matter.Bodies.rectangle(x + 25, y + 20, 40, 8, {
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  const compoundBody = Matter.Body.create({
+    parts: [head, body, arm],
+    render: {
+      fillStyle: 'white',
+      strokeStyle: '#333',
+      lineWidth: 4
+    }
+  });
+  Matter.World.add(engine.world, compoundBody);
+  setInterval(() => {
+    Matter.Body.setAngularVelocity(compoundBody, 0.3);
+    setTimeout(() => {
+      Matter.Body.setAngularVelocity(compoundBody, -0.3);
+    }, 500);
+  }, 1000);
+}
+document.querySelectorAll('.spawn-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const type = btn.dataset.type;
+    const x = Math.random() * (window.innerWidth - 100) + 50;
+    const y = 100;
+    switch (type) {
+      case 'circle':
+        createCircle(x, y);
+        break;
+      case 'person':
+        createPerson(x, y);
+        break;
+      case 'rectangle':
+        createRectangle(x, y);
+        break;
+      case 'triangle':
+        createTriangle(x, y);
+        break;
+      case 'domino':
+        createDomino(x, y);
+        break;
+      case 'seesaw':
+        createSeesaw(x, y);
+        break;
+      case 'spike':
+        createSpike(x, y);
+        break;
+      case 'spring':
+        createSpring(x, y);
+        break;
+      case 'chain':
+        createChain(x, y);
+        break;
+      case 'cannonball':
+        createCannonball(x, y);
+        break;
+      case 'fighter':
+        createFighter(x, y);
+        break;
+    }
+  });
+});
+window.addEventListener('resize', () => {
+  if (menuRender.canvas) {
+    menuRender.canvas.width = window.innerWidth;
+    menuRender.canvas.height = window.innerHeight;
+  }
+});
+const menuEngine = Matter.Engine.create();
+const menuRender = Matter.Render.create({
+  element: menu,
+  engine: menuEngine,
+  options: {
+    width: window.innerWidth,
+    height: window.innerHeight,
+    wireframes: false,
+    background: 'transparent'
+  }
+});
+function initializeMenuPhysics() {
+  Matter.World.clear(menuEngine.world);
+  const ground = Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight + 30, window.innerWidth, 60, {
+    isStatic: true
+  });
+  Matter.World.add(menuEngine.world, [ground, menuMouseConstraint]);
+  menuRender.mouse = menuMouse;
+  Matter.Engine.run(menuEngine);
+  Matter.Render.run(menuRender);
+  menuRender.canvas.id = 'menuRenderCanvas';
+  setInterval(() => {
+    if (menu.style.display !== 'none') {
+      const x = Math.random() * window.innerWidth;
+      const objects = [() => Matter.Bodies.circle(x, -30, 20, {
+        restitution: 0.8,
+        render: {
+          fillStyle: 'white',
+          strokeStyle: '#333',
+          lineWidth: 4
+        }
+      }), () => Matter.Bodies.rectangle(x, -30, 40, 40, {
+        render: {
+          fillStyle: 'white',
+          strokeStyle: '#333',
+          lineWidth: 4
+        }
+      }), () => Matter.Bodies.polygon(x, -30, 3, 25, {
+        render: {
+          fillStyle: 'white',
+          strokeStyle: '#333',
+          lineWidth: 4
+        }
+      })];
+      const randomObject = objects[Math.floor(Math.random() * objects.length)]();
+      Matter.World.add(menuEngine.world, randomObject);
+      setTimeout(() => {
+        if (randomObject.position.y > window.innerHeight + 100) {
+          Matter.World.remove(menuEngine.world, randomObject);
+        }
+      }, 5000);
+    }
+  }, 1000);
+}
+window.addEventListener('load', () => {
+  try {
+    loadAchievements();
+    trackAchievements();
+    initializeMenuPhysics();
+
+    document.getElementById('load-mod').addEventListener('click', () => {
+      document.getElementById('load-mod-file').click();
+    });
+
+    document.getElementById('load-mod-file').addEventListener('change', async e => {
+      if (e.target.files && e.target.files[0]) {
+        try {
+          await loadModFile(e.target.files[0]);
+          alert('Mod loaded successfully!');
+        } catch (error) {
+          console.error('Error loading mod:', error);
+          alert('Error loading mod: ' + error.message);
+        }
+        e.target.value = ''; // Clear the input
+      }
+    });
+
+  } catch (err) {
+    console.error('Error in load event:', err);
+  }
+});
+const menuMouse = Matter.Mouse.create(menuRender.canvas);
+const menuMouseConstraint = Matter.MouseConstraint.create(menuEngine, {
+  mouse: menuMouse,
+  constraint: {
+    stiffness: 0.2,
+    render: {
+      visible: false
+    }
+  }
+});
+Matter.World.add(menuEngine.world, menuMouseConstraint);
+function downloadMod(mod) {
+  const modData = JSON.stringify(mod);
+  const blob = new Blob([modData], {
+    type: 'application/json'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${mod.name || 'mod'}.ppgm`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function loadModFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const mod = JSON.parse(e.target.result);
+        mods.push(mod);
+        displayMods();
+        resolve(mod);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+</script>
+</body></html>
