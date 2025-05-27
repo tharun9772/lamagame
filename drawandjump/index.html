@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Draw and Jump</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="main-menu">
+        <div id="logo">
+            <span class="logo-text">DRAW</span>
+            <div class="logo-character"></div>
+            <span class="logo-text">JUMP</span>
+        </div>
+        <button id="start-game">START GAME</button>
+        <button id="enemy-guide-btn">ENEMY GUIDE</button>
+    </div>
+    
+    <div id="enemy-guide">
+        <h2>ENEMY GUIDE</h2>
+        <div id="enemy-guide-content">
+            <div class="enemy-card">
+                <h3>Spikes Placer</h3>
+                <div class="enemy-preview" data-enemy-type="spikesplacer"></div>
+                <p>Moves side to side along platforms, dropping deadly spikes behind. Stay above to avoid its trail of destruction!</p>
+            </div>
+            
+            <div class="enemy-card">
+                <h3>Snake</h3>
+                <div class="enemy-preview" data-enemy-type="snake"></div>
+                <p>Slithers along platforms and changes direction at edges. Quick and agile, this enemy is hard to avoid on narrow platforms!</p>
+            </div>
+            
+            <div class="enemy-card">
+                <h3>Big Boi</h3>
+                <div class="enemy-preview" data-enemy-type="bigboi"></div>
+                <p>Stationary but dangerous! Shoots projectiles when you get too close. Keep your distance or create platforms to shield yourself!</p>
+            </div>
+            
+            <div class="enemy-card">
+                <h3>Ghost</h3>
+                <div class="enemy-preview" data-enemy-type="ghost"></div>
+                <p>Phases in and out of visibility, making it hard to avoid. Can float through the air in a figure-8 pattern and pass through platforms!</p>
+            </div>
+            
+            <div class="enemy-card">
+                <h3>Flower Dragon</h3>
+                <div class="enemy-preview" data-enemy-type="flowerdragon"></div>
+                <p>Transforms between a harmless flower and a fire-breathing dragon! When open, it shoots fireballs in random directions. Watch out!</p>
+            </div>
+            
+            <div class="enemy-card">
+                <h3>HUGE BOI</h3>
+                <div class="enemy-preview" data-enemy-type="hugeboi"></div>
+                <p>The mighty boss! Has three attack phases and can only be damaged when vulnerable (pink). Jump on its head when it's vulnerable to deal damage!</p>
+            </div>
+        </div>
+        <button id="close-guide">CLOSE</button>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div id="toolbox">
+            <button id="pencilTool" class="active">Draw</button>
+            <button id="eraserTool">Erase</button>
+            <button id="clearAll">Clear All</button>
+            <div id="thickness-control">
+                <label for="thickness-slider">Thickness:</label>
+                <input type="range" id="thickness-slider" min="12" max="48" value="24" step="4">
+                <span id="thickness-value">24px</span>
+            </div>
+        </div>
+        <div id="instructions">
+            <p>Draw platforms to help the character reach the goal!</p>
+            <p>Controls: WASD or Arrow Keys to move</p>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
