@@ -17,6 +17,25 @@
         canvas {
             border: 2px solid #333;
         }
+        .ad-container {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.5);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.game-page-ad {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: rgba(0,0,0,0.5);
+    padding: 5px;
+    border-radius: 5px;
+}
     </style>
 </head>
 <body>
@@ -27,6 +46,12 @@
         }
     }
     </script>
+    <div class="ad-container">
+        <!-- AdForGames.com code begin -->
+        <script>var afg={};afg.u=6532;afg.s=1;
+        document.write("<sc"+"ript src='//js.adforgames.com/cd.js'></sc"+"ript>");</script>
+        <!-- AdForGames.com code end -->
+    </div>
     <script type="module" src="game.js"></script>
 </body>
 </html>
