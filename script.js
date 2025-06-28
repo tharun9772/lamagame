@@ -28,27 +28,45 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 });
 
-window.addEventListener('load', () => {
-    const popup = document.getElementById('popup-ad');
-    const closeBtn = document.getElementById('close-btn');
-    const adInner = document.getElementById('popup-inner');
+function loadAdForGames() {
+    const adContainer = document.getElementById('popup-inner');
 
-    // Show popup
-    popup.style.display = 'flex';
+    // Prevent double-loading
+    if (window.afgLoaded) return;
 
-    // Load ad
+    // Set up ad config
     window.afg = { u: 6532, s: 10 };
+
+    // Create and inject the script
     const script = document.createElement('script');
     script.src = '//js.adforgames.com/cd.js';
-    adInner.appendChild(script);
+    script.async = true;
+    adContainer.appendChild(script);
 
-    // Countdown timer for close button
+    window.afgLoaded = true;
+  }
+
+  window.addEventListener('load', () => {
+    const popup = document.getElementById('popup-ad');
+    const closeBtn = document.getElementById('close-btn');
+
+    // Show the popup
+    popup.style.display = 'flex';
+
+    // Load the ad inside the popup
+    loadAdForGames();
+
+    // Disable close button for 5 sec
     let seconds = 5;
+    closeBtn.disabled = true;
     closeBtn.textContent = `Close (${seconds})`;
+    closeBtn.style.cursor = 'not-allowed';
+    closeBtn.style.background = '#ccc';
 
     const countdown = setInterval(() => {
       seconds--;
       closeBtn.textContent = `Close (${seconds})`;
+
       if (seconds <= 0) {
         clearInterval(countdown);
         closeBtn.textContent = 'Close';
@@ -59,7 +77,7 @@ window.addEventListener('load', () => {
       }
     }, 1000);
 
-    // Close popup
+    // Close popup on click
     closeBtn.addEventListener('click', () => {
       if (!closeBtn.disabled) {
         popup.style.display = 'none';
