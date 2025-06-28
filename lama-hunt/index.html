@@ -1,0 +1,477 @@
+<html>
+<head>
+  <title>Llama Hunt Kaboom</title>
+  <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
+</head>
+<body>
+<script>
+kaboom({
+  width: 640,
+  height: 360,
+  scale: 2,
+})
+
+loadSprite("llama-right", "lama-facing-right.png")
+loadSprite("llama-left", "lama-facing-left.png")
+loadSprite("background", "background.png")
+loadSound("shoot", "shoot.mp3")
+
+let score = 0
+let lives = 3
+let coins = 0
+let activeDucks = 0
+let hasShotgun = false
+let shotgunCooldown = false
+let maxDucks = 4
+let duckSpeedBoost = 0
+let spawnInterval = 1.5
+let inventory = {}
+let equippedGun = null
+let equippedSkin = "default"
+let llamaCollection = { seen: {}, killed: {} }
+
+// Add gun configurations
+const GUNS = {
+  pistol: { name: "Pistol", price: 50, damage: 1, cooldown: 0.5, range: 40 },
+  shotgun: { name: "Shotgun", price: 100, damage: 1, cooldown: 1.0, range: 50 },
+  rifle: { name: "Hunting Rifle", price: 150, damage: 2, cooldown: 1.2, range: 70 },
+  sniper: { name: "Sniper Rifle", price: 200, damage: 3, cooldown: 2.0, range: 100 },
+  machineGun: { name: "Machine Gun", price: 300, damage: 1, cooldown: 0.2, range: 45 },
+  plasmaGun: { name: "Plasma Gun", price: 400, damage: 2, cooldown: 0.8, range: 60 },
+  railgun: { name: "Railgun", price: 500, damage: 4, cooldown: 2.5, range: 120 },
+  laserRifle: { name: "Laser Rifle", price: 600, damage: 2, cooldown: 0.6, range: 80 },
+  rocketLauncher: { name: "Rocket Launcher", price: 800, damage: 5, cooldown: 3.0, range: 90 },
+  bfg: { name: "BFG-9000", price: 1000, damage: 10, cooldown: 4.0, range: 150 }
+}
+
+// Update SKINS configuration to handle default skin properly
+const SKINS = {
+  default: { name: "Default", price: 0, color: null }, // Changed to null to use original sprite
+  red: { name: "Red", price: 200, color: rgb(1, 0.2, 0.2) },
+  blue: { name: "Blue", price: 200, color: rgb(0.2, 0.2, 1) },
+  rainbow: { name: "Rainbow", price: 1000, color: null }
+}
+
+function loadSave() {
+  const data = JSON.parse(localStorage.getItem("duckSave") || '{}')
+  coins = data.coins || 0
+  inventory = data.inventory || {}
+  equippedGun = data.equippedGun || null
+  equippedSkin = data.equippedSkin || "default"
+  llamaCollection = data.llamaCollection || { seen: {}, killed: {} }
+}
+
+function saveGame() {
+  localStorage.setItem("duckSave", JSON.stringify({
+    coins,
+    inventory,
+    equippedGun,
+    equippedSkin,
+    llamaCollection
+  }))
+}
+
+scene("menu", () => {
+  loadSave()
+
+  add([
+    sprite("background"), 
+    pos(0, 0), 
+    scale(width() / 320, height() / 180), // Scale to fit screen dimensions
+    anchor("topleft"),
+    fixed()
+  ])
+  add([text("Llama Hunt Kaboom", { size: 32 }), pos(center().x, 60), anchor("center")])
+  
+  const startBtn = add([text("Start Game", { size: 24 }), pos(center().x, 140), area(), anchor("center")])
+  const shopBtn = add([text("Shop", { size: 24 }), pos(center().x, 180), area(), anchor("center")])
+  const collectionBtn = add([text("Collection", { size: 24 }), pos(center().x, 220), area(), anchor("center")])
+  const skinBtn = add([text("Skins", { size: 24 }), pos(center().x, 260), area(), anchor("center")])
+
+  startBtn.onClick(() => go("game"))
+  shopBtn.onClick(() => go("shop"))
+  collectionBtn.onClick(() => go("collection"))
+  skinBtn.onClick(() => go("skins"))
+})
+
+scene("shop", () => {
+  const ITEMS_PER_PAGE = 5
+  let currentPage = 0
+
+  function drawShop() {
+    destroyAll("shopItem")
+
+    add([
+      sprite("background"), 
+      pos(0, 0), 
+      scale(width() / 320, height() / 180),
+      anchor("topleft"),
+      fixed()
+    ])
+    
+    add([text("Shop - Buy Weapons", { size: 28 }), pos(center().x, 30), anchor("center")])
+    add([text("Coins: " + coins, { size: 20 }), pos(center().x, 60), anchor("center")])
+
+    const gunEntries = Object.entries(GUNS)
+    const pageItems = gunEntries.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE)
+
+    pageItems.forEach(([id, gun], idx) => {
+      const isOwned = inventory[id]
+      const isEquipped = equippedGun === id
+      const yPos = 100 + (idx * 40)
+      
+      const btnText = isOwned 
+        ? (isEquipped ? `${gun.name} [EQUIPPED]` : `${gun.name} [OWNED]`)
+        : `${gun.name} - ${gun.price} coins`
+
+      const btn = add([
+        text(btnText, { size: 16 }),
+        pos(center().x, yPos),
+        area(),
+        anchor("center"),
+        "shopItem",
+      ])
+
+      const statsText = add([
+        text(`DMG: ${gun.damage} | CD: ${gun.cooldown}s | Range: ${gun.range}`, { size: 12 }),
+        pos(center().x, yPos + 15),
+        anchor("center"),
+        "shopItem",
+      ])
+
+      btn.onClick(() => {
+        if (isOwned) {
+          equippedGun = isEquipped ? null : id
+          drawShop()
+          saveGame()
+        } else if (coins >= gun.price) {
+          coins -= gun.price
+          inventory[id] = true
+          equippedGun = id
+          drawShop()
+          saveGame()
+        }
+      })
+    })
+
+    // Navigation buttons
+    if (currentPage > 0) {
+      const prevBtn = add([
+        text("Previous", { size: 16 }),
+        pos(center().x - 100, 320),
+        area(),
+        anchor("center"),
+        "shopItem",
+      ])
+      prevBtn.onClick(() => {
+        currentPage--
+        drawShop()
+      })
+    }
+
+    if ((currentPage + 1) * ITEMS_PER_PAGE < Object.keys(GUNS).length) {
+      const nextBtn = add([
+        text("Next", { size: 16 }),
+        pos(center().x + 100, 320),
+        area(),
+        anchor("center"),
+        "shopItem",
+      ])
+      nextBtn.onClick(() => {
+        currentPage++
+        drawShop()
+      })
+    }
+
+    const backBtn = add([
+      text("Back", { size: 20 }),
+      pos(20, 20),
+      area(),
+    ])
+    backBtn.onClick(() => go("menu"))
+  }
+
+  drawShop()
+})
+
+// Add new scene for collection
+scene("collection", () => {
+  add([
+    sprite("background"), 
+    pos(0, 0), 
+    scale(width() / 320, height() / 180),
+    anchor("topleft"),
+    fixed()
+  ])
+
+  add([text("Llama Collection", { size: 28 }), pos(center().x, 30), anchor("center")])
+
+  // Display stats
+  const totalLlamas = Object.keys(llamaCollection.seen).length
+  const killedLlamas = Object.keys(llamaCollection.killed).length
+
+  add([
+    text(`Total Llamas Seen: ${totalLlamas}`, { size: 16 }),
+    pos(center().x, 80),
+    anchor("center")
+  ])
+
+  add([
+    text(`Total Llamas Defeated: ${killedLlamas}`, { size: 16 }),
+    pos(center().x, 110),
+    anchor("center")
+  ])
+
+  // Back button
+  const backBtn = add([
+    text("Back", { size: 20 }),
+    pos(20, 20),
+    area(),
+  ])
+  backBtn.onClick(() => go("menu"))
+})
+
+// Add new scene for skins
+scene("skins", () => {
+  add([
+    sprite("background"), 
+    pos(0, 0), 
+    scale(width() / 320, height() / 180),
+    anchor("topleft"),
+    fixed()
+  ])
+  
+  add([text("Llama Skins", { size: 28 }), pos(center().x, 30), anchor("center")])
+  add([text("Coins: " + coins, { size: 20 }), pos(center().x, 60), anchor("center")])
+
+  Object.entries(SKINS).forEach(([id, skin], idx) => {
+    const isOwned = id === "default" || inventory[`skin_${id}`]
+    const isEquipped = equippedSkin === id
+    const yPos = 100 + (idx * 50)
+    
+    const btnText = isOwned 
+      ? (isEquipped ? `${skin.name} [EQUIPPED]` : `${skin.name} [OWNED]`)
+      : `${skin.name} - ${skin.price} coins`
+
+    const btn = add([
+      text(btnText, { size: 16 }),
+      pos(center().x, yPos),
+      area(),
+      anchor("center"),
+    ])
+
+    btn.onClick(() => {
+      if (isOwned) {
+        equippedSkin = isEquipped ? "default" : id
+        saveGame()
+        go("skins")
+      } else if (coins >= skin.price) {
+        coins -= skin.price
+        inventory[`skin_${id}`] = true
+        equippedSkin = id
+        saveGame()
+        go("skins")
+      }
+    })
+  })
+
+  const backBtn = add([
+    text("Back", { size: 20 }),
+    pos(20, 20),
+    area(),
+  ])
+  backBtn.onClick(() => go("menu"))
+})
+
+scene("game", () => {
+  score = 0
+  lives = 3
+  activeDucks = 0
+  shotgunCooldown = false
+  maxDucks = 4
+  duckSpeedBoost = 0
+  spawnInterval = 1.5
+  let bossChance = 0.1  // Starting boss spawn chance
+
+  add([
+    sprite("background"), 
+    pos(0, 0), 
+    scale(width() / 320, height() / 180), // Scale to fit screen dimensions
+    anchor("topleft"),
+    fixed()
+  ])
+  const scoreLabel = add([text("Score: 0", { size: 16 }), pos(10, 10), fixed()])
+  const livesLabel = add([text("Lives: 3", { size: 16 }), pos(10, 30), fixed()])
+  const coinsLabel = add([text("Coins: 0", { size: 16 }), pos(10, 50), fixed()])
+  const reloadLabel = add([text("", { size: 16 }), pos(10, 70), fixed(), color(1, 0, 0)])
+
+  const crosshair = add([
+    rect(10, 10),
+    pos(mousePos()),
+    color(1, 0, 0),
+    anchor("center"),
+    fixed(),
+  ])
+  onUpdate(() => crosshair.pos = mousePos())
+
+  function spawnLlama() {
+    if (activeDucks >= maxDucks) return
+
+    const isBoss = rand() < bossChance
+    const fromLeft = rand() < 0.5
+    const y = rand(50, height() - 50)
+    const baseSpeed = rand(100, 200) + duckSpeedBoost
+    const llamaSpeed = baseSpeed * (fromLeft ? 1 : -1)
+
+    const spriteChoice = fromLeft ? "llama-right" : "llama-left"
+    const skin = SKINS[equippedSkin]
+
+    const llama = add([
+      sprite(spriteChoice),
+      pos(fromLeft ? -64 : width() + 64, y),
+      scale(isBoss ? 0.25 : 0.15),
+      area(),
+      "llama",
+      {
+        dir: vec2(fromLeft ? 1 : -1, 0),
+        speed: Math.abs(llamaSpeed),
+        hp: isBoss ? 5 : 1,
+        boss: isBoss,
+      },
+    ])
+
+    // Only apply color effects for non-default skins
+    if (equippedSkin !== "default") {
+      if (skin.color) {
+        llama.color = skin.color
+      } else if (equippedSkin === "rainbow") {
+        let hue = 0
+        llama.onUpdate(() => {
+          hue = (hue + 1) % 360
+          llama.color = hsl2rgb(hue/360, 0.7, 0.5)
+        })
+      }
+    }
+
+    // Update collection when spawning new llama
+    const llamaType = isBoss ? "boss" : "normal"
+    llamaCollection.seen[llamaType] = (llamaCollection.seen[llamaType] || 0) + 1
+
+    activeDucks++
+
+    llama.onUpdate(() => {
+      llama.move(llama.dir.scale(llama.speed))
+      if ((fromLeft && llama.pos.x > width()) || (!fromLeft && llama.pos.x < -64)) {
+        destroy(llama)
+        activeDucks--
+        loseLife()
+      }
+    })
+
+    llama.onClick(() => {
+      if (!hasShotgun) damageLlama(llama)
+    })
+  }
+
+  function damageLlama(llama) {
+    llama.hp--
+    if (llama.hp <= 0) {
+      const llamaType = llama.boss ? "boss" : "normal"
+      llamaCollection.killed[llamaType] = (llamaCollection.killed[llamaType] || 0) + 1
+      
+      if (llama.boss) {
+        score += 5
+        coins += 10
+      } else {
+        score++
+        coins++
+      }
+      destroy(llama)
+      activeDucks--
+      scoreLabel.text = "Score: " + score
+      coinsLabel.text = "Coins: " + coins
+      play("shoot")
+      saveGame()
+    }
+  }
+
+  let spawnLoop = loop(spawnInterval, () => {
+    if (lives > 0) spawnLlama()
+  })
+
+  // Gradually increase difficulty every 10 seconds
+  loop(10, () => {
+    // Increase llama speed
+    duckSpeedBoost += 20
+
+    // Increase maximum simultaneous llamas
+    if (maxDucks < 10) maxDucks++
+
+    // Increase spawn rate (decrease spawn interval)
+    if (spawnInterval > 0.5) {
+      spawnInterval -= 0.1
+      spawnLoop.cancel()
+      spawnLoop = loop(spawnInterval, () => {
+        if (lives > 0) spawnLlama()
+      })
+    }
+
+    // Increase boss spawn chance
+    if (bossChance < 0.3) {  // Cap at 30% chance
+      bossChance += 0.02
+    }
+  })
+
+  loop(30, () => spawnLlama()) // Boss spawn logic
+
+  onClick(() => {
+    if (equippedGun && !shotgunCooldown) {
+      const gun = GUNS[equippedGun]
+      shotgunCooldown = true
+      reloadLabel.text = "Reloading..."
+
+      every("llama", (l) => {
+        if (l.pos.dist(mousePos()) < gun.range) {
+          for (let i = 0; i < gun.damage; i++) {
+            damageLlama(l)
+          }
+          add([
+            rect(6, 6),
+            pos(l.pos),
+            color(1, 1, 0),
+            lifespan(0.3),
+          ])
+        }
+      })
+
+      wait(gun.cooldown, () => {
+        shotgunCooldown = false
+        reloadLabel.text = ""
+      })
+    }
+  })
+
+  function loseLife() {
+    lives--
+    livesLabel.text = "Lives: " + lives
+    if (lives <= 0) go("lose")
+  }
+})
+
+scene("lose", () => {
+  add([
+    sprite("background"), 
+    pos(0, 0), 
+    scale(width() / 320, height() / 180), // Scale to fit screen dimensions
+    anchor("topleft"),
+    fixed()
+  ])
+  add([text("Game Over\nScore: " + score, { size: 32, align: "center" }), pos(center().x, 120), anchor("center")])
+  const retryBtn = add([text("Retry", { size: 24 }), pos(center().x, 200), anchor("center"), area()])
+  retryBtn.onClick(() => go("menu"))
+})
+
+go("menu")
+</script>
+</body>
+</html>
