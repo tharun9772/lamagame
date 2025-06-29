@@ -41,6 +41,11 @@
     </header>
     <main>
         <section class="games-grid">
+            <div class="game-card" data-game="lama-hunt/">
+                <img src="lamahunt.png" alt="Lama Hunt" class="game-thumbnail">
+                <h3>Lama Hunt</h3>
+                <p>Shoot Lamas For Money.</p>
+            </div>
             <div class="game-card" data-game="drawandjump/">
                 <img src="drawandjump.png" alt="Draw And Jump" class="game-thumbnail">
                 <h3>Draw And Jump</h3>
@@ -88,6 +93,20 @@
             </div>
         </section>
     </main>
+    <div id="popup-ad" style="display: none;">
+  <div id="popup-content">
+    <button id="close-btn" disabled>Close (5)</button>
+    <div id="popup-inner">
+      <!-- AdForGames.com code begin -->
+<script>var afg={};afg.u=6532;afg.s=9;
+document.write("<sc"+"ript src='//js.adforgames.com/cd.js'></sc"+"ript>");</script>
+<!-- AdForGames.com code end -->
+    </div>
+  </div>
+</div>
+
+
+
     <div class="ad-container">
         <!-- AdForGames.com code begin -->
         <script>var afg={};afg.u=6532;afg.s=1;
@@ -95,5 +114,43 @@
         <!-- AdForGames.com code end -->
     </div>
     <script src="script.js"></script>
+    <script>
+  window.addEventListener('load', () => {
+    const popup = document.getElementById('popup-ad');
+    const closeBtn = document.getElementById('close-btn');
+
+    // Show the popup
+    popup.style.display = 'flex';
+
+    // Countdown for close button
+    let seconds = 5;
+    closeBtn.disabled = true;
+    closeBtn.textContent = `Close (${seconds})`;
+    closeBtn.style.cursor = 'not-allowed';
+    closeBtn.style.background = '#ccc';
+    closeBtn.style.color = '#000';
+
+    const countdown = setInterval(() => {
+      seconds--;
+      closeBtn.textContent = `Close (${seconds})`;
+
+      if (seconds <= 0) {
+        clearInterval(countdown);
+        closeBtn.textContent = 'Close';
+        closeBtn.disabled = false;
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.style.background = '#f33';
+        closeBtn.style.color = '#fff';
+      }
+    }, 1000);
+
+    // Close popup on click
+    closeBtn.addEventListener('click', () => {
+      if (!closeBtn.disabled) {
+        popup.style.display = 'none';
+      }
+    });
+  });
+</script>
 </body>
 </html>
