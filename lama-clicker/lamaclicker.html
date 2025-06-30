@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lama Clicker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        #game-container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #cookie-button {
+            width: 200px;
+            height: 200px;
+            background-color: #ffda61;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 2em;
+            outline: none;
+            transition: transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #cookie-button:active {
+            transform: scale(0.95);
+        }
+        #cookie-image {
+            max-width: 150px;
+            max-height: 150px;
+        }
+        #score-display {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        #upgrades-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .upgrade-button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        .upgrade-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .upgrade-button:hover:not(:disabled) {
+            background-color: #3e8e41;
+        }
+        #info-bar {
+            margin-top: 20px;
+            font-style: italic;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>Lama Clicker - Created By: Bloxcraft Studios | Lama Games</h1>
+        <p id="info-bar">Click the Big Lama To earn Lama Coins! Upgrade your lama for faster earnings.</p>
+
+        <button id="cookie-button" onclick="cookieClick()">
+            <img id="cookie-image" src=lama.png alt="lama">
+        </button>
+
+        <div id="score-display">Lamas: <span id="cookie-count">0</span></div>
+
+        <div id="upgrades-container">
+            <button class="upgrade-button" id="cursor-upgrade" onclick="buyUpgrade('cursor')" disabled>
+                Cursor - Cost: <span id="cursor-cost">10</span> lamas - Produces: <span id="cursor-production">0.1</span> cookies/second
+            </button>
+            <button class="upgrade-button" id="grandma-upgrade" onclick="buyUpgrade('grandma')" disabled>
+                Grandma - Cost: <span id="grandma-cost">100</span> lamas - Produces: <span id="grandma-production">1</span> cookies/second
+            </button>
+            <button class="upgrade-button" id="farm-upgrade" onclick="buyUpgrade('farm')" disabled>
+                Farm - Cost: <span id="farm-cost">1000</span> lamas - Produces: <span id="farm-production">8</span> cookies/second
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let cookieCount = 0;
+        let cursorCount = 0;
+        let grandmaCount = 0;
+        let farmCount = 0;
+
+        const cookieButton = document.getElementById('cookie-button');
+        const cookieCountDisplay = document.getElementById('cookie-count');
+        const cursorUpgrade = document.getElementById('cursor-upgrade');
+        const grandmaUpgrade = document.getElementById('grandma-upgrade');
+        const farmUpgrade = document.getElementById('farm-upgrade');
+        const cursorCostDisplay = document.getElementById('cursor-cost');
+        const grandmaCostDisplay = document.getElementById('grandma-cost');
+        const farmCostDisplay = document.getElementById('farm-cost');
+        const cursorProductionDisplay = document.getElementById('cursor-production');
+        const grandmaProductionDisplay = document.getElementById('grandma-production');
+        const farmProductionDisplay = document.getElementById('farm-production');
+
+        let cursorCost = 10;
+        let grandmaCost = 100;
+        let farmCost = 1000;
+
+        let cursorProduction = 0.1;
+        let grandmaProduction = 1;
+        let farmProduction = 8;
+
+
+        function cookieClick() {
+            cookieCount++;
+            updateCookieCount();
+        }
+
+        function buyUpgrade(upgradeType) {
+            let cost = 0;
+            let production = 0;
+
+            switch (upgradeType) {
+                case 'cursor':
+                    cost = cursorCost;
+                    production = cursorProduction;
+                    if (cookieCount >= cost) {
+                        cookieCount -= cost;
+                        cursorCount++;
+                        cursorCost = Math.ceil(cursorCost * 1.15); // Increase cost
+                        cursorCostDisplay.textContent = cursorCost;
+                        updateCookieCount();
+                    }
+                    break;
+                case 'grandma':
+                    cost = grandmaCost;
+                    production = grandmaProduction;
+                    if (cookieCount >= cost) {
+                        cookieCount -= cost;
+                        grandmaCount++;
+                        grandmaCost = Math.ceil(grandmaCost * 1.15);
+                        grandmaCostDisplay.textContent = grandmaCost;
+                        updateCookieCount();
+                    }
+                    break;
+                case 'farm':
+                    cost = farmCost;
+                    production = farmProduction;
+                    if (cookieCount >= cost) {
+                        cookieCount -= cost;
+                        farmCount++;
+                        farmCost = Math.ceil(farmCost * 1.15);
+                        farmCostDisplay.textContent = farmCost;
+                        updateCookieCount();
+                    }
+                    break;
+
+            }
+            checkUpgradeAvailability();
+        }
+
+        function updateCookieCount() {
+            cookieCountDisplay.textContent = Math.floor(cookieCount);
+            checkUpgradeAvailability();
+        }
+
+        function checkUpgradeAvailability() {
+            cursorUpgrade.disabled = cookieCount < cursorCost;
+            grandmaUpgrade.disabled = cookieCount < grandmaCost;
+            farmUpgrade.disabled = cookieCount < farmCost;
+        }
+
+        // Automatic Cookie Generation
+        setInterval(() => {
+            cookieCount += cursorCount * cursorProduction / 10; // 10 times per second for a smooth animation
+            cookieCount += grandmaCount * grandmaProduction / 10;
+            cookieCount += farmCount * farmProduction / 10;
+            updateCookieCount();
+        }, 100);
+    </script>
+
+</body>
+</html>
